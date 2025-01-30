@@ -1,4 +1,4 @@
-package it.gov.pagopa.self.expense.connector.repository;
+package it.gov.pagopa.self.expense.repository;
 
 import it.gov.pagopa.self.expense.model.AnprInfo;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;

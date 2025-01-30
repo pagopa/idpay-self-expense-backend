@@ -408,15 +408,29 @@ app:
   util:
     crypto:
       aes:
-
         encoding: ${UTIL_CRYPTO_AES_ENCODING:UTF-8}
         secret-type:
           pbe:
-
-
-
-
-
         mode:
           gcm:
+  cache:
+    ttl: 60
+  redirect:
+    login-url: "http://oauth.io.pagopa.it/authorize?client_id=<client_id>&respose_type=code&scope=openid&20profile&redirect_uri=<redirect_uri>&state=<state>"
+    token-ul: "http://example.com/session/<session-id>"
+    client-id: "testClientId" #secret
+    uri: "http://example.com/redirect"
+
+  rest-client:
+    oidc-provider:
+      jwksUrl: "https://oauth.io.pagopa.it/jwks"
+      issuer: "https://oauth.io.pagopa.it"
+      baseUrl: "https://oauth.io.pagopa.it/authorize"
+      clientId: "testClientId" #secret
+      clientSecret: "testClientSecret" #secret
+
+    mil-auth:
+      baseUrl: "https://api-mcshared.dev.cstar.pagopa.it/auth/token"
+      clientId: "testClientId" #secret
+      clientSecret: "testClientSecret"  #secret
 

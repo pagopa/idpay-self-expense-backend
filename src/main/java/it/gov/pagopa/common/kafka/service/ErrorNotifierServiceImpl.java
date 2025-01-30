@@ -1,6 +1,6 @@
 package it.gov.pagopa.common.kafka.service;
 
-import it.gov.pagopa.self.expense.config.KafkaConfiguration;
+import it.gov.pagopa.self.expense.configuration.KafkaConfiguration;
 import it.gov.pagopa.common.kafka.utils.KafkaConstants;
 import java.nio.charset.StandardCharsets;
 import lombok.extern.slf4j.Slf4j;

@@ -1,4 +1,4 @@
-package it.gov.pagopa.self.expense.config;
+package it.gov.pagopa.self.expense.configuration;
 
 import jakarta.annotation.PostConstruct;
 import lombok.*;
