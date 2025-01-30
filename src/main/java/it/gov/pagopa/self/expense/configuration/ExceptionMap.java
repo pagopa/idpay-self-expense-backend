@@ -83,6 +83,14 @@ public class ExceptionMap {
                 )
         );
 
+        exceptions.put(Constants.ExceptionName.ANPR_INFO_NOT_FOUND, message ->
+                new ClientExceptionWithBody(
+                        HttpStatus.NOT_FOUND,
+                        Constants.ExceptionCode.ANPR_INFO_NOT_FOUND,
+                        message
+                )
+        );
+
     }
 
     public RuntimeException throwException(String exceptionKey, String message) {

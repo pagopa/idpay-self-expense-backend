@@ -25,31 +25,73 @@ class SelfExpenseServiceImplTest {
     private AnprInfoRepository anprInfoRepository;
 
     @Test
-    void getChildForUserId() {
+    void getChildForUserIdOk() {
 
         String userId = "userId_1";
         String initiativeId = "initiative_1";
-
-
-        //caso anpr_info presente
-        AnprInfo result_ok = new AnprInfo();
-        result_ok.setUserId(userId);
-        result_ok.setInitiativeId(initiativeId);
-        result_ok.setFamilyId("family_1");
+        
+        AnprInfo resultOk = new AnprInfo();
+        resultOk.setUserId(userId);
+        resultOk.setInitiativeId(initiativeId);
+        resultOk.setFamilyId("family_1");
         Child child1 = new Child("child1", "nome1", "cognome1");
         Child child2 = new Child("child2", "nome2", "cognome2");
         List<Child> childList = new ArrayList<>();
         childList.add(child1);childList.add(child2);
-        result_ok.setChildList(childList);
+        resultOk.setChildList(childList);
 
         ChildResponseDTO childResponseDTOExpected = new ChildResponseDTO();
-        childResponseDTOExpected.setChildList(result_ok.getChildList());
+        childResponseDTOExpected.setChildList(resultOk.getChildList());
 
-        Mockito.when(anprInfoRepository.findByUserIdAndInitiativeId(userId, initiativeId)).thenReturn(Mono.just(result_ok));
+        Mockito.when(anprInfoRepository.findByUserIdAndInitiativeId(userId, initiativeId)).thenReturn(Mono.just(resultOk));
 
         StepVerifier.create(selfExpenseService.getChildForUserId(userId, initiativeId))
                         .expectNext(childResponseDTOExpected)
                         .verifyComplete();
+
+    }
+
+    @Test
+    void getChildForUserIdNotFound() {
+
+        String userId = "userId_1";
+        String initiativeId = "initiative_1";
+
+        ChildResponseDTO childResponseDTOExpected = new ChildResponseDTO();
+        childResponseDTOExpected.setChildList(new ArrayList<>());
+
+        Mockito.when(anprInfoRepository.findByUserIdAndInitiativeId(userId, initiativeId)).thenReturn(Mono.empty());
+
+        StepVerifier.create(selfExpenseService.getChildForUserId(userId, initiativeId))
+                // Verify that the service method completes without emitting any item
+                .verifyComplete();
+
+    }
+
+    @Test
+    void getChildForUserIdNoChild() {
+
+        String userId = "userId_1";
+        String initiativeId = "initiative_1";
+
+        //caso anpr_info presente
+        AnprInfo resultNoChild = new AnprInfo();
+        resultNoChild.setUserId(userId);
+        resultNoChild.setInitiativeId(initiativeId);
+        resultNoChild.setFamilyId("family_1");
+
+        List<Child> childList = new ArrayList<>();
+
+        resultNoChild.setChildList(childList);
+
+        ChildResponseDTO childResponseDTOExpected = new ChildResponseDTO();
+        childResponseDTOExpected.setChildList(resultNoChild.getChildList());
+
+        Mockito.when(anprInfoRepository.findByUserIdAndInitiativeId(userId, initiativeId)).thenReturn(Mono.just(resultNoChild));
+
+        StepVerifier.create(selfExpenseService.getChildForUserId(userId, initiativeId))
+                .expectNext(childResponseDTOExpected)
+                .verifyComplete();
 
     }
 }

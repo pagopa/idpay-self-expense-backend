@@ -1,5 +1,7 @@
 package it.gov.pagopa.self.expense.controller;
 
+import it.gov.pagopa.self.expense.configuration.ExceptionMap;
+import it.gov.pagopa.self.expense.constants.Constants;
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import it.gov.pagopa.self.expense.service.SelfExpenseService;
 import lombok.extern.slf4j.Slf4j;
@@ -12,15 +14,20 @@ import reactor.core.publisher.Mono;
 public class SelfExpenseControllerImpl implements SelfExpenseController{
 
     private final SelfExpenseService selfExpenseService;
+    private final ExceptionMap exceptionMap;
 
-    public SelfExpenseControllerImpl(SelfExpenseService selfExpenseService) {
+    public SelfExpenseControllerImpl(SelfExpenseService selfExpenseService, ExceptionMap exceptionMap ) {
         this.selfExpenseService = selfExpenseService;
+        this.exceptionMap = exceptionMap;
     }
 
     @Override
     public Mono<ResponseEntity<ChildResponseDTO>> getChildForUserId(String userId, String initiativeId) {
         return selfExpenseService.getChildForUserId(userId, initiativeId)
-                //.switchIfEmpty(Mono)
+                .switchIfEmpty(Mono.error(exceptionMap.throwException(
+                    Constants.ExceptionName.ANPR_INFO_NOT_FOUND,
+                    Constants.ExceptionMessage.ANPR_INFO_NOT_FOUND
+                )))
                 .map(ResponseEntity::ok);
     }
 }
