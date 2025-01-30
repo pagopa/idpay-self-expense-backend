@@ -3,9 +3,11 @@ package it.gov.pagopa.self.expense.connector;
 
 import it.gov.pagopa.self.expense.model.OIDCProviderToken;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+@Service
 public class OIDCProviderConnectorImpl implements OIDCProviderConnector {
 
     private final WebClient webClient;
