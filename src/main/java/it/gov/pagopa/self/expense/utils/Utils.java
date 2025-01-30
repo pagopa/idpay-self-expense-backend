@@ -4,8 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.UUID;
 
 @Slf4j
 public final class Utils {
@@ -81,6 +83,11 @@ public final class Utils {
         }
     }
 
+    public static String generateUUID(String podId) {
+        long timestamp = Instant.now().toEpochMilli();
+        String randomUUID = UUID.randomUUID().toString();
+        return randomUUID + "-" + podId + "-" +timestamp;
+    }
 
 
 }

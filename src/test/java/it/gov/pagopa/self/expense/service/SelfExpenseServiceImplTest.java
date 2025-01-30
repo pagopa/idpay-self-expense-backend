@@ -1,6 +1,6 @@
 package it.gov.pagopa.self.expense.service;
 
-import it.gov.pagopa.self.expense.connector.repository.AnprInfoRepository;
+import it.gov.pagopa.self.expense.repository.AnprInfoRepository;
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import it.gov.pagopa.self.expense.model.AnprInfo;
 import it.gov.pagopa.self.expense.model.Child;

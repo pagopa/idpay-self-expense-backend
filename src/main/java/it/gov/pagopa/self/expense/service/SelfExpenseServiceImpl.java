@@ -1,6 +1,6 @@
 package it.gov.pagopa.self.expense.service;
 
-import it.gov.pagopa.self.expense.connector.repository.AnprInfoRepository;
+import it.gov.pagopa.self.expense.repository.AnprInfoRepository;
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;

@@ -2,7 +2,7 @@ package it.gov.pagopa.common.kafka.service;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
-import it.gov.pagopa.self.expense.config.KafkaConfiguration;
+import it.gov.pagopa.self.expense.configuration.KafkaConfiguration;
 import it.gov.pagopa.common.kafka.utils.KafkaConstants;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.junit.jupiter.api.Assertions;
