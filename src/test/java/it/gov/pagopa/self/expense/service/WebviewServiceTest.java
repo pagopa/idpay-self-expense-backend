@@ -6,8 +6,8 @@ import it.gov.pagopa.self.expense.connector.OIDCProviderConnectorImpl;
 import it.gov.pagopa.self.expense.constants.Constants;
 import it.gov.pagopa.self.expense.model.MilAuthAccessToken;
 import it.gov.pagopa.self.expense.model.OIDCProviderToken;
-import it.gov.pagopa.self.expense.model.PodInfo;
-import it.gov.pagopa.self.expense.model.RedirectInfo;
+import it.gov.pagopa.self.expense.configuration.PodInfo;
+import it.gov.pagopa.self.expense.configuration.RedirectInfo;
 import it.gov.pagopa.self.expense.utils.Utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -63,7 +63,7 @@ class WebviewServiceTest {
     @Autowired
     private WebviewServiceImpl webviewService;
 
-    private final String sessionId = "sessionId";
+    private final String sessionId = "3f2504e0-4f89-41d3-9a0c-0305e82c3301-example-123";
     private final String state = "generatedState";
     private final String fiscalCode = "fiscalCode";
     private final String authCode = "authCode";

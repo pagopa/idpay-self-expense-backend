@@ -1,7 +1,5 @@
 package it.gov.pagopa.self.expense.utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
@@ -75,13 +73,6 @@ public final class Utils {
     }
     //endregion
 
-    public static <T> String convertToJson(T object, ObjectMapper objectMapper) {
-        try {
-            return objectMapper.writeValueAsString(object);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Error converting request in JSON",e);
-        }
-    }
 
     public static String generateUUID(String podId) {
         long timestamp = Instant.now().toEpochMilli();

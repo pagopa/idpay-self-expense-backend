@@ -1,4 +1,4 @@
-package it.gov.pagopa.self.expense.model;
+package it.gov.pagopa.self.expense.configuration;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;

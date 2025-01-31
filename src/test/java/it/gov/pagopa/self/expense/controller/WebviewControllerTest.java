@@ -20,7 +20,7 @@ class WebviewControllerTest {
     private static final String DEEP_LINK = "http://example.com/deepLink";
     private static final String AUTH_CODE = "authCode";
     private static final String STATE = "state";
-    private static final String SESSION_ID = "sessionId";
+    private static final String SESSION_ID = "3f2504e0-4f89-41d3-9a0c-0305e82c3301-example-123";
     private static final String ACCESS_TOKEN = "accessToken";
     private static final String TOKEN_TYPE = "tokenType";
     private static final String EXPIRES_IN = "expiresIn";
@@ -70,7 +70,7 @@ class WebviewControllerTest {
         webClient.get()
                 .uri("/session/{sessionId}", SESSION_ID)
                 .exchange()
-                .expectStatus().isOk()  // Status is HttpStatus.OK (200)
+                .expectStatus().isOk()
                 .expectBody(MilAuthAccessToken.class)
                 .consumeWith(response -> {
                     MilAuthAccessToken resultResponse = response.getResponseBody();
