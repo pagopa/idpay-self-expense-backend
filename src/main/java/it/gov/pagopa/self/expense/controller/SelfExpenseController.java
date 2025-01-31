@@ -7,9 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import reactor.core.publisher.Mono;
 
-/**
- * Component that exposes APIs
- * */
+
 @RequestMapping("/idpay/self-expense")
 public interface SelfExpenseController {
 
