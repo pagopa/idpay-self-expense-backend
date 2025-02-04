@@ -1,10 +1,9 @@
 package it.gov.pagopa.self.expense.controller;
 
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
+import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 
@@ -14,4 +13,6 @@ public interface SelfExpenseController {
     @GetMapping(value = "/get-child/{userId}/{initiativeId}")
     Mono<ResponseEntity<ChildResponseDTO>> getChildForUserId(@PathVariable("userId") String userId, @PathVariable("initiativeId") String initiativeId);
 
+    @PostMapping(value = "/save-expense-data")
+    Mono<ResponseEntity<Void>> saveExpenseData(@RequestBody ExpenseDataDTO expenseDataDTO);
 }

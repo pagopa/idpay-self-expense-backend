@@ -91,6 +91,14 @@ public class ExceptionMap {
                 )
         );
 
+        exceptions.put(Constants.ExceptionName.EXPENSE_DATA_ERROR_ON_SAVE_DB, message ->
+                new ClientExceptionWithBody(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        Constants.ExceptionCode.EXPENSE_DATA_ERROR_ON_SAVE_DB,
+                        message
+                )
+        );
+
     }
 
     public RuntimeException throwException(String exceptionKey, String message) {

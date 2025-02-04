@@ -3,9 +3,14 @@ package it.gov.pagopa.self.expense.service;
 import it.gov.pagopa.self.expense.configuration.ExceptionMap;
 import it.gov.pagopa.self.expense.constants.Constants;
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
+import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import it.gov.pagopa.self.expense.model.AnprInfo;
 import it.gov.pagopa.self.expense.model.Child;
+import it.gov.pagopa.self.expense.model.ExpenseData;
+import it.gov.pagopa.self.expense.model.FileData;
+import it.gov.pagopa.self.expense.model.mapper.ExpenseDataMapper;
 import it.gov.pagopa.self.expense.repository.AnprInfoRepository;
+import it.gov.pagopa.self.expense.repository.ExpenseDataRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +19,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @SpringBootTest(classes = { SelfExpenseServiceImpl.class, ExceptionMap.class })
@@ -30,6 +36,9 @@ class SelfExpenseServiceImplTest {
 
     @MockBean
     private AnprInfoRepository anprInfoRepository;
+
+    @MockBean
+    private ExpenseDataRepository expenseDataRepository;
 
     @Autowired
     private ExceptionMap exceptionMap;
@@ -80,4 +89,61 @@ class SelfExpenseServiceImplTest {
         childResponseDTO.setChildList(anprInfo.getChildList());
         return childResponseDTO;
     }
+
+
+
+    @Test
+    void testSaveExpenseData_Failure() {
+
+        ExpenseDataDTO dto = buildExpenseDataDTO();
+
+        Mockito.when(expenseDataRepository.save(ExpenseDataMapper.map(dto)))
+                .thenThrow(new IllegalArgumentException("Error on db"));
+
+        Mockito.when(expenseDataRepository.save(Mockito.any(ExpenseData.class)))
+                .thenReturn(Mono.error(new RuntimeException("DB error")));
+
+        Mono<Void> result = selfExpenseService.saveExpenseData(dto);
+
+        StepVerifier.create(result)
+                .expectErrorMatches(throwable -> throwable instanceof RuntimeException &&
+                        throwable.getMessage().equals(Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB))
+                .verify();
+    }
+
+    @Test
+    void testSaveExpenseData_Success() {
+        ExpenseDataDTO expenseDataDTO = buildExpenseDataDTO();
+        ExpenseData expenseData = ExpenseDataMapper.map(expenseDataDTO);
+
+        Mockito.when(expenseDataRepository.save(ExpenseDataMapper.map(expenseDataDTO))).thenReturn(Mono.just(expenseData));
+
+        Mono<Void> result = selfExpenseService.saveExpenseData(expenseDataDTO);
+
+        StepVerifier.create(result)
+                .verifyComplete();
+    }
+
+    private static ExpenseDataDTO buildExpenseDataDTO() {
+        FileData fileData = new FileData();
+        fileData.setData("fileData");
+        fileData.setFilename("file.pdf");
+        fileData.setContentType("file/pdf");
+        return ExpenseDataDTO.builder()
+                .name("nome")
+                .surname("surname")
+                .amount(10.20)
+                .expenseDate(LocalDateTime.now())
+                .companyName("company")
+                .entityId("entityId")
+                .fiscalCode("ABCQWE89T08H224W")
+                .initiativeId("initiative")
+                .file(fileData)
+                .build();
+
+    }
+
+
+
+
 }

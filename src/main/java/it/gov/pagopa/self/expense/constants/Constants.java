@@ -13,6 +13,7 @@ public class Constants {
         public static final String TOKEN_SAVE_FAIL = "TOKEN_SAVE_FAIL";
         public static final String UNKNOWN_ERROR = "UNKNOWN_ERROR" ;
         public static final String ANPR_INFO_NOT_FOUND = "ANPR_INFO_NOT_FOUND";
+        public static final String EXPENSE_DATA_ERROR_ON_SAVE_DB = "EXPENSE_DATA_ERROR_DB_SAVE";
         private ExceptionCode() {}
     }
 
@@ -27,7 +28,7 @@ public class Constants {
         public static final String TOKEN_SAVE_FAIL = "Token could not be saved to the cache.";
         public static final String UNKNOWN_ERROR = "Operation failed for unknown reason";
         public static final String ANPR_INFO_NOT_FOUND = "Anpr info could not be found.";
-
+        public static final String EXPENSE_DATA_ERROR_ON_SAVE_DB = "Error on save into DB expense_data document";
         private ExceptionMessage() {}
     }
 
@@ -42,6 +43,7 @@ public class Constants {
         public static final String TOKEN_SAVE_FAIL = "Token Save Failure";
         public static final String UNKNOWN_ERROR = "Unknown error";
         public static final String ANPR_INFO_NOT_FOUND = "Anpr info Not Found";
+        public static final String EXPENSE_DATA_ERROR_ON_SAVE_DB = "Error on save into DB expense_data document";
         private ExceptionName() {}
     }
 

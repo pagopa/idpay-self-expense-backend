@@ -2,7 +2,9 @@ package it.gov.pagopa.self.expense.controller;
 
 
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
+import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import it.gov.pagopa.self.expense.model.Child;
+import it.gov.pagopa.self.expense.model.FileData;
 import it.gov.pagopa.self.expense.service.SelfExpenseService;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -14,6 +16,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -65,4 +68,38 @@ class SelfExpenseControllerTest {
 
         return childResponseDTO;
     }
+
+
+    @Test
+    void shouldReturnVoid_WhenExpenseDataAreSavedCorrectly() {
+        // Given
+
+        FileData fileData = new FileData();
+        fileData.setData("fileData");
+        fileData.setFilename("file.pdf");
+        fileData.setContentType("file/pdf");
+        ExpenseDataDTO dto = ExpenseDataDTO.builder()
+                .name("nome")
+                .surname("surname")
+                .amount(10.20)
+                .expenseDate(LocalDateTime.now())
+                .companyName("company")
+                .entityId("entityId")
+                .fiscalCode("ABCQWE89T08H224W")
+                .initiativeId("initiative")
+                .file(fileData)
+                .build();
+
+        Mockito.when(selfExpenseService.saveExpenseData(dto))
+                .thenReturn(Mono.empty());
+
+        // When & Then
+        webClient.post()
+                .uri("/idpay/self-expense/save-expense-data")
+                .bodyValue(dto)
+                .exchange()
+                .expectStatus().isOk()
+                ;
+    }
+
 }
