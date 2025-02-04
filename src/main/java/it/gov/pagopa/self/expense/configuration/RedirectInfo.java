@@ -11,7 +11,7 @@ public class RedirectInfo {
     @Value("${app.redirect.login-url}")
     private String loginRedirect;
 
-    @Value("${app.redirect.token-ul}")
+    @Value("${app.redirect.token-url}")
     private String tokenRedirect;
 
     @Value("${app.redirect.client-id}")

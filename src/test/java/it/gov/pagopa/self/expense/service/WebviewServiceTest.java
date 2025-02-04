@@ -37,7 +37,7 @@ import static org.mockito.Mockito.*;
         RedirectInfo.class })
 @TestPropertySource(properties = {
         "redirect.login-url=http://example.com/login?state=<state>&client_id=<client_id>&redirect_uri=<redirect_uri>",
-        "redirect.token-ul=http://example.com/token?session-id=<session-id>",
+        "redirect.token-url=http://example.com/token?session-id=<session-id>",
         "redirect.client-id=testClientId",
         "redirect.uri=http://example.com/redirect"
 })
