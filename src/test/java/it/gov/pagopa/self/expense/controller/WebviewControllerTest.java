@@ -36,7 +36,7 @@ class WebviewControllerTest {
         Mockito.when(webviewService.login()).thenReturn(Mono.just(DEEP_LINK));
 
         webClient.get()
-                .uri("/login")
+                .uri("/idpay/self-expense/login")
                 .exchange()
                 .expectStatus().isFound()  // Status is HttpStatus.FOUND (302)
                 .expectHeader().valueEquals("Location", DEEP_LINK)
@@ -48,7 +48,7 @@ class WebviewControllerTest {
         Mockito.when(webviewService.token(AUTH_CODE, STATE)).thenReturn(Mono.just(DEEP_LINK));
 
         webClient.get()
-                .uri(uriBuilder -> uriBuilder.path("/redirect")
+                .uri(uriBuilder -> uriBuilder.path("/idpay/self-expense/redirect")
                         .queryParam("code", AUTH_CODE)
                         .queryParam("state", STATE)
                         .build())
@@ -68,7 +68,7 @@ class WebviewControllerTest {
         Mockito.when(webviewService.session(SESSION_ID)).thenReturn(Mono.just(token));
 
         webClient.get()
-                .uri("/session/{sessionId}", SESSION_ID)
+                .uri("/idpay/self-expense/session/{sessionId}", SESSION_ID)
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(MilAuthAccessToken.class)
