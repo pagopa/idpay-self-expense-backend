@@ -32,7 +32,7 @@ microservice-chart:
 
   ingress:
     create: true
-    path: /idpayselfexpense/(.*)
+    path: /idpayselfexpensebackend/(.*)
     servicePort: 8080
 
   serviceAccount:
@@ -55,7 +55,7 @@ microservice-chart:
   envConfig:
     APP: "idpay-self-expense-backend"
     MONGODB_DBNAME: "idpay"
-    APPLICATIONINSIGHTS_ROLE_NAME: "idpayselfexpense"
+    APPLICATIONINSIGHTS_ROLE_NAME: "idpayselfexpensebackend"
     APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL: "OFF"
     APPLICATIONINSIGHTS_INSTRUMENTATION_MICROMETER_ENABLED: "false"
     APPLICATIONINSIGHTS_PREVIEW_PROFILER_ENABLED: "false"

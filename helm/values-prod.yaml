@@ -1,6 +1,6 @@
 microservice-chart:
   image:
-    repository: cstarpcommonacr.azurecr.io/idpayselfexpense
+    repository: cstarpcommonacr.azurecr.io/idpayselfexpensebackend
     tag: latest
     pullPolicy: Always
 
