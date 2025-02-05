@@ -27,9 +27,6 @@ spring:
     activate:
       on-profile: default
   cloud:
-    azure:
-      servicebus:
-        connection-string: ${SERVICEBUS_ONBOARDING_CONNECTION_STRING:}
     function:
       definition: errors
     stream:
