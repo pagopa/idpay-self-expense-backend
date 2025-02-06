@@ -47,7 +47,7 @@ spring:
 
 management:
   health:
-    redis.enabled: ${REDIS_CACHE_ENABLED:false}
+    redis.enabled: false
     mongo.enabled: ${HEALTH_MONGO_ENABLED:true}
   endpoint:
     health:
@@ -113,10 +113,10 @@ app:
   cache:
     ttl: 60
   redirect:
-    login-url: "http://oauth.io.pagopa.it/authorize?client_id=<client_id>&respose_type=code&scope=openid&20profile&redirect_uri=<redirect_uri>&state=<state>"
-    token-url: "http://example.com/session/<session-id>"
+    login-url: "https://oauth.io.pagopa.it/authorize?client_id=<client_id>&response_type=code&scope=openid&20profile&redirect_uri=<redirect_uri>&state=<state>"
+    token-url: "https://example.com/session/<session-id>"
     client-id: "testClientId" #secret
-    uri: "http://example.com/redirect"
+    uri: "https://api-io.dev.cstar.pagopa.it/idpay/self-expense/redirect"
 
   rest-client:
     oidc-provider:
