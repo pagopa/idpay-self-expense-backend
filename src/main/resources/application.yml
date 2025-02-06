@@ -156,7 +156,7 @@ app:
   redirect:
     login-url: "https://oauth.io.pagopa.it/authorize?client_id=<client_id>&response_type=code&scope=openid&20profile&redirect_uri=<redirect_uri>&state=<state>"
     token-url: "https://example.com/session/<session-id>"
-    client-id: "testClientId" #secret
+    clientId: ${OIDC_CLIENT_ID:clientId}
     uri: "https://api-io.dev.cstar.pagopa.it/idpay/self-expense/redirect"
 
   rest-client:
@@ -164,11 +164,11 @@ app:
       jwksUrl: "https://oauth.io.pagopa.it/jwks"
       issuer: "https://oauth.io.pagopa.it"
       baseUrl: "https://oauth.io.pagopa.it/authorize"
-      clientId: "testClientId" #secret
-      clientSecret: "testClientSecret" #secret
+      clientId: ${OIDC_CLIENT_ID:clientId}
+      clientSecret: ${OIDC_CLIENT_SECRET:clientId}
 
     mil-auth:
       baseUrl: "https://api-mcshared.dev.cstar.pagopa.it/auth/token"
-      clientId: "testClientId" #secret
-      clientSecret: "testClientSecret"  #secret
+      clientId: ${MIL_AUTH_CLIENT_ID:clientId}
+      clientSecret: ${MIL_AUTH_CLIENT_SECRET:clientSecret}
 
