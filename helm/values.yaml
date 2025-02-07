@@ -61,6 +61,7 @@ microservice-chart:
     APPLICATIONINSIGHTS_PREVIEW_PROFILER_ENABLED: "false"
     _JAVA_OPTIONS: "-Djava.util.concurrent.ForkJoinPool.common.parallelism=7 -Dio.netty.eventLoopThreads=100 -Dreactor.netty.ioWorkerCount=4 -Dreactor.netty.pool.maxConnections=16"
     HEALTH_MONGO_ENABLED: "false"
+    KAFKA_COMMANDS_GROUP_ID: "idpay-commands-self-expense-consumer-group"
 
   externalConfigMapValues:
     idpay-common:
@@ -70,7 +71,7 @@ microservice-chart:
     idpay-eventhub-01:
       KAFKA_ERRORS_BROKER: kafka_broker
       KAFKA_ERRORS_TOPIC: idpay_error_topic
-
+      KAFKA_COMMANDS_TOPIC: idpay_commands_topic
 
 
   envSecret:

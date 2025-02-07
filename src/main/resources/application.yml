@@ -41,7 +41,7 @@ spring:
           binder: kafka-commands
           content-type: ${KAFKA_CONTENT_TYPE:application/json}
           destination: ${KAFKA_COMMANDS_TOPIC:idpay-commands}
-          group: ${KAFKA_COMMANDS_GROUP_ID:idpay-commands-admissibility-assessor-consumer-group}
+          group: ${KAFKA_COMMANDS_GROUP_ID:idpay-commands-self-expense-consumer-group}
       binders:
         kafka-errors:
           type: kafka
