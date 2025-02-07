@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import reactor.core.publisher.Mono;
 
 import static it.gov.pagopa.self.expense.constants.Constants.UUID_REGEX;
-@RequestMapping("/idpay/self-expense")
 
+@RequestMapping("/idpay/self-expense")
 public interface WebviewController {
 
     @GetMapping("/login")
