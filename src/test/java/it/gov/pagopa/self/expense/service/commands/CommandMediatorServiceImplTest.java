@@ -6,14 +6,18 @@ import it.gov.pagopa.common.utils.MemoryAppender;
 import it.gov.pagopa.common.utils.TestUtils;
 import it.gov.pagopa.self.expense.dto.commands.QueueCommandOperationDTO;
 import it.gov.pagopa.self.expense.utils.CommandConstants;
+import it.gov.pagopa.self.expense.utils.faker.QueueCommandOperationDTOFaker;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
+import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import reactor.core.publisher.Flux;
@@ -24,6 +28,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -158,5 +164,31 @@ class CommandMediatorServiceImplTest {
         String result = commandMediatorService.getFlowName();
         //then
         Assertions.assertEquals(expected,result);
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {800,1000,1010})
+    void testSuccessful(long commitDelay){
+        // Given
+        int N = 10;
+        List<QueueCommandOperationDTO> initiatives = IntStream.range(0, N).mapToObj(QueueCommandOperationDTOFaker::mockInstance).collect(Collectors.toList());
+        Flux<Message<String>> inputFlux = Flux.fromIterable(initiatives)
+                .map(TestUtils::jsonSerializer)
+                .map(payload -> MessageBuilder
+                        .withPayload(payload)
+                        .setHeader(KafkaHeaders.RECEIVED_PARTITION, 0)
+                        .setHeader(KafkaHeaders.OFFSET, 0L)
+                )
+                .map(MessageBuilder::build);
+
+        CommandMediatorService service = new CommandMediatorServiceImpl("appName", commitDelay,"PT1S", selfExpenseErrorNotifierService, deleteInitiativeServiceMock, TestUtils.objectMapper);
+
+        // when
+        Mockito.when(deleteInitiativeServiceMock.execute("entityId")).thenReturn(Mono.just("true"));
+        service.execute(inputFlux);
+
+        // then
+        Mockito.verify(deleteInitiativeServiceMock, Mockito.times(N)).execute(Mockito.any());
+
     }
 }
