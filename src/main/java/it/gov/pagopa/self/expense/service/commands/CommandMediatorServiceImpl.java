@@ -21,26 +21,25 @@ import java.util.function.Consumer;
 public class CommandMediatorServiceImpl extends BaseKafkaConsumer<QueueCommandOperationDTO, String> implements CommandMediatorService{
 
     private final Duration commitDelay;
-    private final Duration beneficiaryRulesBuildDelayMinusCommit;
+    private final Duration delayMinusCommit;
     private final DeleteInitiativeService deleteInitiativeService;
     private final SelfExpenseErrorNotifierService selfExpenseErrorNotifierService;
     private final ObjectReader objectReader;
 
     public CommandMediatorServiceImpl(@Value("${spring.application.name}") String applicationName,
                                       @Value("${spring.cloud.stream.kafka.bindings.consumerCommands-in-0.consumer.ackTime}")  long commitMillis,
-                                      @Value("${app.beneficiary-rule.build-delay-duration}") String beneficiaryRulesBuildDelay,
-                                      DeleteInitiativeService deleteInitiativeService,
+                                      @Value("${app.beneficiary-rule.build-delay-duration}") String delayMinusCommit,
                                       SelfExpenseErrorNotifierService selfExpenseErrorNotifierService,
+                                      DeleteInitiativeService deleteInitiativeService,
                                       ObjectMapper objectMapper) {
         super(applicationName);
         this.commitDelay = Duration.ofMillis(commitMillis);
         this.deleteInitiativeService = deleteInitiativeService;
         this.selfExpenseErrorNotifierService = selfExpenseErrorNotifierService;
         this.objectReader = objectMapper.readerFor(QueueCommandOperationDTO.class);
-
-        Duration beneficiaryRulesBuildDelayDuration = Duration.parse(beneficiaryRulesBuildDelay).minusMillis(commitMillis);
+        Duration buildDelayDuration = Duration.parse(delayMinusCommit).minusMillis(commitMillis);
         Duration defaultDurationDelay = Duration.ofMillis(2L);
-        this.beneficiaryRulesBuildDelayMinusCommit = defaultDurationDelay.compareTo(beneficiaryRulesBuildDelayDuration) >= 0 ? defaultDurationDelay : beneficiaryRulesBuildDelayDuration;
+        this.delayMinusCommit = defaultDurationDelay.compareTo(buildDelayDuration) >= 0 ? defaultDurationDelay : buildDelayDuration;
     }
 
     @Override
@@ -51,8 +50,8 @@ public class CommandMediatorServiceImpl extends BaseKafkaConsumer<QueueCommandOp
     @Override
     protected void subscribeAfterCommits(Flux<List<String>> afterCommits2subscribe) {
         afterCommits2subscribe
-                .buffer(beneficiaryRulesBuildDelayMinusCommit)
-                .subscribe(r -> log.info("[SELF-EXPENSE-BACKEND] Processed offsets committed successfully"));
+                .buffer(delayMinusCommit)
+                .subscribe(r -> log.info("[SELF_EXPENSE_COMMANDS] Processed offsets committed successfully"));
     }
 
     @Override
@@ -62,12 +61,12 @@ public class CommandMediatorServiceImpl extends BaseKafkaConsumer<QueueCommandOp
 
     @Override
     protected Consumer<Throwable> onDeserializationError(Message<String> message) {
-        return e -> selfExpenseErrorNotifierService.notifySelfExpenseCommands(message, "[SELF-EXPENSE-BACKENDS] Unexpected JSON", false, e);
+        return e -> selfExpenseErrorNotifierService.notifySelfExpenseCommands(message, "[SELF_EXPENSE_COMMANDS] Unexpected JSON", false, e);
     }
 
     @Override
     protected void notifyError(Message<String> message, Throwable e) {
-        selfExpenseErrorNotifierService.notifySelfExpenseCommands(message, "[SELF-EXPENSE-BACKEND] An error occurred evaluating commands", true, e);
+        selfExpenseErrorNotifierService.notifySelfExpenseCommands(message, "[SELF_EXPENSE_COMMANDS] An error occurred evaluating commands", true, e);
     }
 
     @Override
@@ -75,13 +74,13 @@ public class CommandMediatorServiceImpl extends BaseKafkaConsumer<QueueCommandOp
         if (CommandConstants.OPERATION_TYPE_DELETE_INITIATIVE.equals(payload.getOperationType())) {
             return deleteInitiativeService.execute(payload.getEntityId());
         }
-        log.debug("[ADMISSIBILITY_COMMANDS] Invalid operation type {}", payload.getOperationType());
+        log.debug("[SELF_EXPENSE_COMMANDS] Invalid operation type {}", payload.getOperationType());
         return Mono.empty();
     }
 
     @Override
     public String getFlowName() {
-        return "SELF-EXPENSE-BACKEND";
+        return "SELF_EXPENSE_COMMANDS";
     }
 
 

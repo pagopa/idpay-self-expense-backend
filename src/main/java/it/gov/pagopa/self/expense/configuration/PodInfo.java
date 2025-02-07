@@ -7,8 +7,6 @@ import org.springframework.stereotype.Component;
 @Component
 @Getter
 public class PodInfo {
-
     @Value("${HOSTNAME:unknown}")
     private String podId;
-
 }

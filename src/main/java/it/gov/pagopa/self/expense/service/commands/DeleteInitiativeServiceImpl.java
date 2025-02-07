@@ -20,7 +20,8 @@ public class DeleteInitiativeServiceImpl implements DeleteInitiativeService{
     private final int pageSize;
     private final long delay;
 
-    public DeleteInitiativeServiceImpl(ExpenseDataRepository expenseDataRepository, AuditUtilities auditUtilities,
+    public DeleteInitiativeServiceImpl(ExpenseDataRepository expenseDataRepository,
+                                       AuditUtilities auditUtilities,
                                        @Value("${app.delete.paginationSize}") int pageSize,
                                        @Value("${app.delete.delayTime}") long delay) {
         this.expenseDataRepository = expenseDataRepository;
