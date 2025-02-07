@@ -16,7 +16,7 @@ public class ExpenseDataMapper {
                 //TODO da confermare se deve essere hashato
                 .userId(dto.getFiscalCode())
                 .initiativeId(dto.getInitiativeId())
-                .file(dto.getFile())
+                .fileList(dto.getFileList())
                 .build();
     }
 }

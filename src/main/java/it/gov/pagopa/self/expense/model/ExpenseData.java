@@ -5,6 +5,7 @@ import lombok.Data;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Document("expense_data")
 @Data
@@ -19,6 +20,6 @@ public class ExpenseData {
     private String entityId;
     private String userId;
     private String initiativeId;
-    private FileData file;
+    private List<FileData> fileList;
 
 }

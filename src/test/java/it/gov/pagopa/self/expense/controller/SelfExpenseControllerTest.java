@@ -17,6 +17,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -78,6 +79,8 @@ class SelfExpenseControllerTest {
         fileData.setData("fileData");
         fileData.setFilename("file.pdf");
         fileData.setContentType("file/pdf");
+        List<FileData> fileList = new ArrayList<>();
+        fileList.add(fileData);
         ExpenseDataDTO dto = ExpenseDataDTO.builder()
                 .name("nome")
                 .surname("surname")
@@ -87,7 +90,7 @@ class SelfExpenseControllerTest {
                 .entityId("entityId")
                 .fiscalCode("ABCQWE89T08H224W")
                 .initiativeId("initiative")
-                .file(fileData)
+                .fileList(fileList)
                 .build();
 
         Mockito.when(selfExpenseService.saveExpenseData(dto))

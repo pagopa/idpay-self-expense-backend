@@ -20,6 +20,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @SpringBootTest(classes = { SelfExpenseServiceImpl.class, ExceptionMap.class })
@@ -129,6 +130,8 @@ class SelfExpenseServiceImplTest {
         fileData.setData("fileData");
         fileData.setFilename("file.pdf");
         fileData.setContentType("file/pdf");
+        List<FileData> fileList = new ArrayList<>();
+        fileList.add(fileData);
         return ExpenseDataDTO.builder()
                 .name("nome")
                 .surname("surname")
@@ -138,7 +141,7 @@ class SelfExpenseServiceImplTest {
                 .entityId("entityId")
                 .fiscalCode("ABCQWE89T08H224W")
                 .initiativeId("initiative")
-                .file(fileData)
+                .fileList(fileList)
                 .build();
 
     }
