@@ -28,13 +28,18 @@ spring:
       on-profile: default
   cloud:
     function:
-      definition: errors
+      definition: errors;consumerCommands
     stream:
       bindings:
         errors-out-0:
           destination: ${KAFKA_ERRORS_TOPIC:idpay-errors}
           content-type: ${KAFKA_CONTENT_TYPE:application/json}
           binder: kafka-errors
+        consumerCommands-in-0:
+          binder: kafka-commands
+          content-type: ${KAFKA_CONTENT_TYPE:application/json}
+          destination: ${KAFKA_COMMANDS_TOPIC:idpay-commands}
+          group: ${KAFKA_COMMANDS_GROUP_ID:idpay-commands-admissibility-assessor-consumer-group}
       binders:
         kafka-errors:
           type: kafka
@@ -44,7 +49,13 @@ spring:
               configuration:
                 sasl.jaas.config: ${KAFKA_ERRORS_SASL_JAAS_CONFIG:}
                 key.serializer: org.apache.kafka.common.serialization.StringSerializer
-
+        kafka-commands:
+          type: kafka
+          environment:
+            spring.cloud.stream.kafka.binder:
+              brokers: ${KAFKA_COMMANDS_BROKER:${KAFKA_BROKER:}}
+              configuration:
+                sasl.jaas.config: ${KAFKA_COMMANDS_SASL_JAAS_CONFIG:}
       kafka:
         binder:
           auto-create-topics: false
@@ -67,6 +78,21 @@ spring:
                 retry.backoff.ms: ${KAFKA_ERRORS_KAFKA_RETRY_MS:${KAFKA_RETRY_MS:10000}}
                 linger.ms: ${KAFKA_ERRORS_LINGER_MS:${KAFKA_LINGER_MS:2}}
                 batch.size: ${KAFKA_ERRORS_BATCH_SIZE:${KAFKA_BATCH_SIZE:16384}}
+          consumerCommands-in-0:
+            consumer:
+              startOffset: ${KAFKA_COMMANDS_START_OFFSET:${KAFKA_CONSUMER_CONFIG_START_OFFSET:earliest}}
+              autoCommitOffset: false
+              ackMode: MANUAL_IMMEDIATE
+              ackTime: ${KAFKA_COMMANDS_ACK_MILLIS:500}
+              standardHeaders: ${KAFKA_COMMANDS_STANDARD_HEADERS:${KAFKA_CONSUMER_CONFIG_STANDARD_HEADERS:both}}
+              configuration:
+                max.poll:
+                  records: ${KAFKA_COMMANDS_MAX_POLL_SIZE:${KAFKA_CONSUMER_CONFIG_MAX_POLL_SIZE:500}}
+                  interval.ms: ${KAFKA_COMMANDS_INTERVAL_TIMEOUT_MS:${KAFKA_CONFIG_MAX_POLL_INTERVAL_TIMEOUT_MS:300000}}
+                connections.max.idle.ms: ${KAFKA_COMMANDS_CONNECTIONS_MAX_IDLE_MS:${KAFKA_CONSUMER_CONFIG_CONNECTIONS_MAX_IDLE_MS:180000}}
+                socket.connection.setup.timeout:
+                  max.ms: ${KAFKA_COMMANDS_CONNECTION_TIMEOUT_MAX_MS:${KAFKA_CONSUMER_CONFIG_CONNECTION_TIMEOUT_MAX_MS:200000}}
+                  ms: ${KAFKA_COMMANDS_CONNECTION_TIMEOUT_MS:${KAFKA_CONSUMER_CONFIG_CONNECTION_TIMEOUT_MS:100000}}
 
   data:
     redis:
@@ -128,6 +154,18 @@ logging:
     org.mongodb.driver: ${LOG_LEVEL_MONGODB_DRIVER:WARN}
 
 app:
+  beneficiary-rule:
+    # if true, it will try to build each rule singularly, but this will take more time
+    online-syntax-check: ${BENEFICIARY_RULE_BUILD_ONLINE_SYNTAX_CHECK:false}
+    # the delay after which it will fetch all the rules and compile them
+    build-delay-duration: ${BENEFICIARY_RULE_BUILD_DELAY_DURATION:PT1S} # each second
+    # The milliseconds rate after which to fetch from cache a new instance of the benefiricaryRilekieContainer
+    cache.refresh-ms-rate: ${CACHE_REFRESH_MS_RATE:10000}
+    # Pre load container
+    pre-load: ${BENEFICIARY_RULE_CONTAINER_PRE_LOAD_ENABLED:true}
+  delete:
+    paginationSize: ${DELETE_PAGINATION_SIZE:60}
+    delayTime: ${DELETE_DELAY_TIME:1000}
   threads:
     # the size of the thread pool to handle @Scheduled tasks
     schedule-max-number: ${THREADS_SCHEDULE_MAX_NUMBER:1}
@@ -155,10 +193,9 @@ app:
     ttl: 60
   redirect:
     login-url: "https://oauth.io.pagopa.it/authorize?client_id=<client_id>&response_type=code&scope=openid&20profile&redirect_uri=<redirect_uri>&state=<state>"
-    token-url: "https://example.com/session/<session-id>"
+    token-url: "https://example.com/session/<session-id>" #web-app link
     clientId: ${OIDC_CLIENT_ID:clientId}
     uri: "https://api-io.dev.cstar.pagopa.it/idpay/self-expense/redirect"
-
   rest-client:
     oidc-provider:
       jwksUrl: "https://oauth.io.pagopa.it/jwks"
