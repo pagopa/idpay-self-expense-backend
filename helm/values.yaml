@@ -79,6 +79,7 @@ microservice-chart:
     REDIS_CONNECTION_URL: idpay-redis-00-primary-connection-url
     PDV_DECRYPT_API_KEY: pdv-api-key
     KAFKA_ERRORS_SASL_JAAS_CONFIG: evh-idpay-errors-idpay-errors-producer-jaas-config-idpay-01
+    KAFKA_COMMANDS_SASL_JAAS_CONFIG: evh-idpay-commands-idpay-commands-consumer-jaas-config-idpay-01
 
     MIL_AUTH_CLIENT_ID: mil-auth-webview-client-id
     MIL_AUTH_CLIENT_SECRET: mil-auth-webview-client-secret
