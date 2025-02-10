@@ -26,7 +26,7 @@ import java.util.List;
 class SelfExpenseControllerTest {
 
     private static final String USER_ID = "userId";
-    private static final String INITIATIVE_ID = "initiative";
+    private static final String MIL_AUTH_TOKEN = "milAuthToken";
     private static final String CHILD_NAME = "nome";
     private static final String CHILD_SURNAME = "cognome";
 
@@ -41,12 +41,12 @@ class SelfExpenseControllerTest {
         // Given
         var expectedResponse = buildChildResponseDTO();
 
-        Mockito.when(selfExpenseService.getChildForUserId(USER_ID, INITIATIVE_ID))
+        Mockito.when(selfExpenseService.getChildForUserId(MIL_AUTH_TOKEN))
                 .thenReturn(Mono.just(expectedResponse));
 
         // When & Then
         webClient.get()
-                .uri("/idpay/self-expense/get-child/{userId}/{initiativeId}", USER_ID, INITIATIVE_ID)
+                .uri("/idpay/self-expense/get-child/{milAuthToken}", MIL_AUTH_TOKEN)
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(ChildResponseDTO.class)

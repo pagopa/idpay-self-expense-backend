@@ -11,7 +11,7 @@ import reactor.core.publisher.Mono;
 public interface SelfExpenseController {
 
     @GetMapping(value = "/get-child/{milAuthToken}")
-    Mono<ResponseEntity<ChildResponseDTO>> getChildForUserId(@PathVariable("userId") String userId, @PathVariable("initiativeId") String initiativeId);
+    Mono<ResponseEntity<ChildResponseDTO>> getChildForUserId(@PathVariable("milAuthToken") String milAuthToken);
 
     @PostMapping(value = "/save-expense-data")
     Mono<ResponseEntity<Void>> saveExpenseData(@RequestBody ExpenseDataDTO expenseDataDTO);
