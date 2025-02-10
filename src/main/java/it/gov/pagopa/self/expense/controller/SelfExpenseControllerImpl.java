@@ -17,6 +17,9 @@ public class SelfExpenseControllerImpl implements SelfExpenseController{
 
     @Override
     public Mono<ResponseEntity<ChildResponseDTO>> getChildForUserId(String userId, String initiativeId) {
+       //Recuperare tramite il milAuthToken (usato come Key su redis) il fiscalCode del richiedente (Papà, Mamma o Tutore del minore)
+        //Una volta recuperato il fiscalCode sarà necessario, tramite pdv, convertirlo in uuid
+        // Dopodiché continuare il flusso
         return selfExpenseService.getChildForUserId(userId, initiativeId)
                 .map(ResponseEntity::ok);
     }
