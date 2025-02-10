@@ -71,6 +71,7 @@ microservice-chart:
     idpay-eventhub-01:
       KAFKA_ERRORS_BROKER: kafka_broker
       KAFKA_ERRORS_TOPIC: idpay_error_topic
+      KAFKA_COMMANDS_BROKER: kafka_broker
       KAFKA_COMMANDS_TOPIC: idpay_commands_topic
 
 
