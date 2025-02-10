@@ -35,10 +35,10 @@ public class SelfExpenseServiceImpl implements SelfExpenseService{
     @Override
     public Mono<ChildResponseDTO> getChildForUserId(String milAuthToken) {
         return cacheService.getFromCache(milAuthToken)
-                .flatMap(userFiscalCodeService::getUserId)
                 .switchIfEmpty(Mono.error(exceptionMap.throwException(
                         Constants.ExceptionName.ANPR_INFO_NOT_FOUND,
                         Constants.ExceptionMessage.ANPR_INFO_NOT_FOUND)))
+                .flatMap(userFiscalCodeService::getUserId)
                 .switchIfEmpty(Mono.error(exceptionMap.throwException(
                         Constants.ExceptionName.ANPR_INFO_NOT_FOUND,
                         Constants.ExceptionMessage.ANPR_INFO_NOT_FOUND)))
