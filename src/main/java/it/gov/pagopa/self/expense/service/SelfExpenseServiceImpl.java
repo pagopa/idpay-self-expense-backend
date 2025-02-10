@@ -1,5 +1,6 @@
 package it.gov.pagopa.self.expense.service;
 
+import it.gov.pagopa.common.reactive.pdv.service.UserFiscalCodeService;
 import it.gov.pagopa.self.expense.configuration.ExceptionMap;
 import it.gov.pagopa.self.expense.constants.Constants;
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
@@ -19,24 +20,39 @@ public class SelfExpenseServiceImpl implements SelfExpenseService{
 
     private final ExceptionMap exceptionMap;
 
-    public SelfExpenseServiceImpl(AnprInfoRepository anprInfoRepository, ExceptionMap exceptionMap, ExpenseDataRepository expenseDataRepository) {
+    private final CacheService cacheService;
+
+    private final UserFiscalCodeService userFiscalCodeService;
+
+    public SelfExpenseServiceImpl(AnprInfoRepository anprInfoRepository, ExceptionMap exceptionMap, ExpenseDataRepository expenseDataRepository, CacheService cacheService, UserFiscalCodeService userFiscalCodeService) {
         this.anprInfoRepository = anprInfoRepository;
         this.expenseDataRepository = expenseDataRepository;
         this.exceptionMap = exceptionMap;
+        this.cacheService = cacheService;
+        this.userFiscalCodeService = userFiscalCodeService;
     }
 
     @Override
-    public Mono<ChildResponseDTO> getChildForUserId(String userId, String initiativeId) {
-
-        return anprInfoRepository.findByUserIdAndInitiativeId(userId, initiativeId)
+    public Mono<ChildResponseDTO> getChildForUserId(String milAuthToken) {
+        return cacheService.getFromCache(milAuthToken)
                 .switchIfEmpty(Mono.error(exceptionMap.throwException(
+                        Constants.ExceptionName.ANPR_INFO_NOT_FOUND,
+                        Constants.ExceptionMessage.ANPR_INFO_NOT_FOUND)))
+                .flatMap(userFiscalCodeService::getUserId)
+                .switchIfEmpty(Mono.error(exceptionMap.throwException(
+                        Constants.ExceptionName.ANPR_INFO_NOT_FOUND,
+                        Constants.ExceptionMessage.ANPR_INFO_NOT_FOUND)))
+                .flatMap(userId -> anprInfoRepository.findByUserId(userId)
+                        .switchIfEmpty(Mono.error(exceptionMap.throwException(
                                 Constants.ExceptionName.ANPR_INFO_NOT_FOUND,
                                 Constants.ExceptionMessage.ANPR_INFO_NOT_FOUND)))
-                .map(anprInfo -> {
-                    ChildResponseDTO childResponseDTO = new ChildResponseDTO();
-                    childResponseDTO.setChildList(anprInfo.getChildList());
-                    return childResponseDTO;
-                });
+                        .map(anprInfo -> {
+                            ChildResponseDTO childResponseDTO = new ChildResponseDTO();
+                            childResponseDTO.setChildList(anprInfo.getChildList());
+                            childResponseDTO.setUserId(userId);
+                            return childResponseDTO;
+                        })
+                );
     }
 
     @Override

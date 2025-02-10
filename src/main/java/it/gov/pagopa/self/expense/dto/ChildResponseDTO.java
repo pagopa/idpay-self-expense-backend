@@ -7,6 +7,6 @@ import java.util.List;
 
 @Data
 public class ChildResponseDTO {
-
+    private String userId; // fiscalCode del richiedente criptato
     private List<Child> childList;
 }
