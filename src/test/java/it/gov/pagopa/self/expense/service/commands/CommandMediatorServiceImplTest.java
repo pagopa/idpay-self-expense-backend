@@ -84,7 +84,7 @@ class CommandMediatorServiceImplTest {
 
         //then
         Assertions.assertEquals(
-                "[SELF_EXPENSE_COMMANDS] Processed offsets committed successfully",
+                "[SELF-EXPENSE-COMMANDS] Processed offsets committed successfully",
                 memoryAppender.getLoggedEvents().get(0).getFormattedMessage()
         );
     }
@@ -94,7 +94,7 @@ class CommandMediatorServiceImplTest {
         commandMediatorService.notifyError(messageMock, error);
         Mockito.verify(selfExpenseErrorNotifierService).notifySelfExpenseCommands(
                 messageMock,
-                "[SELF_EXPENSE_COMMANDS] An error occurred evaluating commands",
+                "[SELF-EXPENSE-COMMANDS] An error occurred evaluating commands",
                 true,
                 error
         );
@@ -105,7 +105,7 @@ class CommandMediatorServiceImplTest {
         commandMediatorService.onDeserializationError(messageMock).accept(error);
         Mockito.verify(selfExpenseErrorNotifierService).notifySelfExpenseCommands(
                 messageMock,
-                "[SELF_EXPENSE_COMMANDS] Unexpected JSON",
+                "[SELF-EXPENSE-COMMANDS] Unexpected JSON",
                 false,
                 error
         );
@@ -159,7 +159,7 @@ class CommandMediatorServiceImplTest {
     @Test
     void getFlowName() {
         //given
-        String expected = "SELF_EXPENSE_COMMANDS";
+        String expected = "SELF-EXPENSE-COMMANDS";
         //when
         String result = commandMediatorService.getFlowName();
         //then

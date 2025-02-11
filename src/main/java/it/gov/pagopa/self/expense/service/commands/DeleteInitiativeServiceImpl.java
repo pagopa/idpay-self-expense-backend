@@ -32,7 +32,7 @@ public class DeleteInitiativeServiceImpl implements DeleteInitiativeService{
 
     @Override
     public Mono<String> execute(String initiativeId) {
-        log.info("[DELETE_INITIATIVE] Starting handle delete initiative {}", initiativeId);
+        log.info("[DELETE-INITIATIVE] Starting handle delete initiative {}", initiativeId);
         return  execAndLogTiming("DELETE_SELF_EXPENSE", initiativeId, deleteSelfExpense(initiativeId))
                 .then(Mono.just(initiativeId));
     }
@@ -48,7 +48,7 @@ public class DeleteInitiativeServiceImpl implements DeleteInitiativeService{
                         .then(Mono.just(of).delayElement(Duration.ofMillis(delay))), pageSize)
                 .doOnNext(expenseData -> auditUtilities.logDeletedExpenseData(expenseData.getUserId(), initiativeId))
                 .then()
-                .doOnSuccess(i -> log.info("[DELETE_INITIATIVE] Deleted initiative {} from collection: expense_data", initiativeId));
+                .doOnSuccess(i -> log.info("[DELETE-INITIATIVE] Deleted initiative {} from collection: expense_data", initiativeId));
     }
 
 
