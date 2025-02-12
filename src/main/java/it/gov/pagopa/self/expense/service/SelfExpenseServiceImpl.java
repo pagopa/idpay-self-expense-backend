@@ -64,7 +64,6 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
     @Override
     public Mono<Void> saveExpenseData(ExpenseDataDTO expenseData) {
         log.info("[SELF-EXPENSE-SERVICE][SAVE] Saving expense data for user: {}", expenseData.getFiscalCode());
-        //TODO add hashing on fiscalCode
         return expenseDataRepository.save(ExpenseDataMapper.map(expenseData))
                 .then()
                 .doOnSuccess(result -> log.info("Expense data saved successfully for user: {}", expenseData.getFiscalCode()))
