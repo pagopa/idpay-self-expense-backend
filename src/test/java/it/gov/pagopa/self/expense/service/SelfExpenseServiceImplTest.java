@@ -161,7 +161,7 @@ class SelfExpenseServiceImplTest {
                 .entityId("entityId")
                 .fiscalCode("ABCQWE89T08H224W")
                 .description("initiative")
-                .fileList(fileList)t
+                .fileList(fileList)
                 .build();
 
     }
