@@ -23,7 +23,7 @@ public class ExpenseData {
     private String companyName;
     private String entityId;
     private String userId;
-    private String initiativeId;
+    private String description;
     private List<FileData> fileList;
 
 }

@@ -43,7 +43,7 @@ public class DeleteInitiativeServiceImpl implements DeleteInitiativeService{
     }
 
     private Mono<Void> deleteSelfExpense(String initiativeId) {
-        return expenseDataRepository.findByInitiativeIdWithBatch(initiativeId, pageSize)
+        return expenseDataRepository.findAllWithBatch(pageSize)
                 .flatMap(of -> expenseDataRepository.deleteById(of.getId())
                         .then(Mono.just(of).delayElement(Duration.ofMillis(delay))), pageSize)
                 .doOnNext(expenseData -> auditUtilities.logDeletedExpenseData(expenseData.getUserId(), initiativeId))
