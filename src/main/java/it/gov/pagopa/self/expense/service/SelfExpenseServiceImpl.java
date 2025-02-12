@@ -74,4 +74,15 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
                             Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB));
                 });
     }
+
+    @Override
+    public Mono<Void> saveExpenseData(ExpenseDataDTO expenseData) {
+
+        return expenseDataRepository.save(ExpenseDataMapper.map(expenseData))
+                .then()
+                .onErrorResume(e ->
+                        Mono.error(exceptionMap.throwException(
+                        Constants.ExceptionName.EXPENSE_DATA_ERROR_ON_SAVE_DB,
+                        Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB)));
+    }
 }

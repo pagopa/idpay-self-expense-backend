@@ -117,7 +117,6 @@ class SelfExpenseServiceImplTest {
 
         ExpenseDataDTO dto = buildExpenseDataDTO();
 
-
         Mockito.when(expenseDataRepository.save(ExpenseDataMapper.map(dto)))
                 .thenThrow(new IllegalArgumentException("Error on db"));
 
@@ -152,6 +151,7 @@ class SelfExpenseServiceImplTest {
         fileData.setContentType("file/pdf");
         List<FileData> fileList = new ArrayList<>();
         fileList.add(fileData);
+
         return ExpenseDataDTO.builder()
                 .name("nome")
                 .surname("surname")
@@ -161,7 +161,7 @@ class SelfExpenseServiceImplTest {
                 .entityId("entityId")
                 .fiscalCode("ABCQWE89T08H224W")
                 .description("initiative")
-                .fileList(fileList)
+                .fileList(fileList)t
                 .build();
 
     }

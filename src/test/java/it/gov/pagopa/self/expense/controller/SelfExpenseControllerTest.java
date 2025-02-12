@@ -81,6 +81,7 @@ class SelfExpenseControllerTest {
         fileData.setContentType("file/pdf");
         List<FileData> fileList = new ArrayList<>();
         fileList.add(fileData);
+
         ExpenseDataDTO dto = ExpenseDataDTO.builder()
                 .name("nome")
                 .surname("surname")
