@@ -7,7 +7,7 @@ import reactor.core.publisher.Mono;
 
 public interface AnprInfoRepository extends ReactiveMongoRepository<AnprInfo, String> {
 
-    Mono<AnprInfo> findByUserIdAndInitiativeId(String userId, String initiativeId);
+    Mono<AnprInfo> findByUserId(String userId);
 
 
 }

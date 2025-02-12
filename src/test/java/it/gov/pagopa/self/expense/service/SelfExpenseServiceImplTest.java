@@ -1,5 +1,6 @@
 package it.gov.pagopa.self.expense.service;
 
+import it.gov.pagopa.common.reactive.pdv.service.UserFiscalCodeService;
 import it.gov.pagopa.self.expense.configuration.ExceptionMap;
 import it.gov.pagopa.self.expense.constants.Constants;
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
@@ -20,12 +21,15 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @SpringBootTest(classes = { SelfExpenseServiceImpl.class, ExceptionMap.class })
 class SelfExpenseServiceImplTest {
 
     private static final String USER_ID = "userId";
+    private static final String FISCAL_CODE = "fiscalCode";
+    private static final String MIL_AUTH_TOKEN = "milAuthToken";
     private static final String INITIATIVE_ID = "initiativeId";
     private static final String FAMILY_ID = "familyId";
     private static final String CHILD_NAME = "nome";
@@ -40,6 +44,12 @@ class SelfExpenseServiceImplTest {
     @MockBean
     private ExpenseDataRepository expenseDataRepository;
 
+    @MockBean
+    private UserFiscalCodeService userFiscalCodeService;
+
+    @MockBean
+    private CacheService cacheService;
+
     @Autowired
     private ExceptionMap exceptionMap;
 
@@ -48,20 +58,29 @@ class SelfExpenseServiceImplTest {
         AnprInfo anprInfo = buildAnprInfo();
         ChildResponseDTO childResponseDTO = buildChildResponseDTO(anprInfo);
 
-        Mockito.when(anprInfoRepository.findByUserIdAndInitiativeId(USER_ID, INITIATIVE_ID))
-                .thenReturn(Mono.just(anprInfo));
+        Mockito.when(cacheService.getFromCache(MIL_AUTH_TOKEN)).thenReturn(Mono.just(FISCAL_CODE));
 
-        StepVerifier.create(selfExpenseService.getChildForUserId(USER_ID, INITIATIVE_ID))
+        Mockito.when(userFiscalCodeService.getUserId(FISCAL_CODE)).thenReturn(Mono.just(USER_ID));
+
+        Mockito.when(anprInfoRepository.findByUserId(USER_ID)).thenReturn(Mono.just(anprInfo));
+
+        StepVerifier.create(selfExpenseService.getChildForUserId(MIL_AUTH_TOKEN))
                 .expectNext(childResponseDTO)
                 .verifyComplete();
     }
 
     @Test
     void shouldReturnError_WhenUserNotFound() {
-        Mockito.when(anprInfoRepository.findByUserIdAndInitiativeId(USER_ID, INITIATIVE_ID))
+
+
+        Mockito.when(cacheService.getFromCache(MIL_AUTH_TOKEN)).thenReturn(Mono.just(FISCAL_CODE));
+
+        Mockito.when(userFiscalCodeService.getUserId(FISCAL_CODE)).thenReturn(Mono.just(USER_ID));
+
+        Mockito.when(anprInfoRepository.findByUserId(USER_ID))
                 .thenReturn(Mono.empty());
 
-        StepVerifier.create(selfExpenseService.getChildForUserId(USER_ID, INITIATIVE_ID))
+        StepVerifier.create(selfExpenseService.getChildForUserId(MIL_AUTH_TOKEN))
                 .expectErrorMatches(throwable ->
                         throwable.getMessage().contains(Constants.ExceptionMessage.ANPR_INFO_NOT_FOUND)
                 )
@@ -74,7 +93,7 @@ class SelfExpenseServiceImplTest {
         child.setCognome(CHILD_SURNAME);
         child.setUserId(USER_ID);
         child.setNome(CHILD_NAME);
-
+        child.setUserId(USER_ID);
         AnprInfo anprInfo = new AnprInfo();
         anprInfo.setUserId(USER_ID);
         anprInfo.setInitiativeId(INITIATIVE_ID);
@@ -87,6 +106,7 @@ class SelfExpenseServiceImplTest {
     private ChildResponseDTO buildChildResponseDTO(AnprInfo anprInfo){
         ChildResponseDTO childResponseDTO = new ChildResponseDTO();
         childResponseDTO.setChildList(anprInfo.getChildList());
+        childResponseDTO.setUserId(anprInfo.getUserId());
         return childResponseDTO;
     }
 
@@ -129,6 +149,9 @@ class SelfExpenseServiceImplTest {
         fileData.setData("fileData");
         fileData.setFilename("file.pdf");
         fileData.setContentType("file/pdf");
+        List<FileData> fileList = new ArrayList<>();
+        fileList.add(fileData);
+
         return ExpenseDataDTO.builder()
                 .name("nome")
                 .surname("surname")
@@ -137,8 +160,8 @@ class SelfExpenseServiceImplTest {
                 .companyName("company")
                 .entityId("entityId")
                 .fiscalCode("ABCQWE89T08H224W")
-                .initiativeId("initiative")
-                .file(fileData)
+                .description("initiative")
+                .fileList(fileList)
                 .build();
 
     }

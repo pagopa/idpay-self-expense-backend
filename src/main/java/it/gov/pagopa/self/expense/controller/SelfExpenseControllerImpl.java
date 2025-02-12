@@ -16,8 +16,8 @@ public class SelfExpenseControllerImpl implements SelfExpenseController{
     }
 
     @Override
-    public Mono<ResponseEntity<ChildResponseDTO>> getChildForUserId(String userId, String initiativeId) {
-        return selfExpenseService.getChildForUserId(userId, initiativeId)
+    public Mono<ResponseEntity<ChildResponseDTO>> getChildForUserId(String milAuthToken) {
+        return selfExpenseService.getChildForUserId(milAuthToken)
                 .map(ResponseEntity::ok);
     }
 

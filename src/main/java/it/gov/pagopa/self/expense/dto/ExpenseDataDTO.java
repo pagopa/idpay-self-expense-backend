@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -17,6 +18,6 @@ public class ExpenseDataDTO {
     private String companyName;
     private String entityId;
     private String fiscalCode;
-    private String initiativeId;
-    private FileData file;
+    private String description;
+    private List<FileData> fileList;
 }

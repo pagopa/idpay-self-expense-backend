@@ -33,42 +33,61 @@ public class OIDCServiceImpl implements OIDCService {
         this.clientId = clientId;
     }
 
+    @Override
     public boolean validateTokens(OIDCProviderToken oidcToken) {
+        log.info("[OIDC-SERVICE][VALIDATION] Validating OIDC tokens");
         try {
             if (!validateToken(oidcToken.getIdToken())) {
+                log.warn("[OIDC-SERVICE][VALIDATION] ID token validation failed");
                 return false;
             }
-            return validateToken(oidcToken.getAccessToken());
+            boolean accessTokenValid = validateToken(oidcToken.getAccessToken());
+            if (!accessTokenValid) {
+                log.warn("[OIDC-SERVICE][VALIDATION] Access token validation failed");
+            }
+            return accessTokenValid;
         } catch (Exception e) {
-            log.info(e.getMessage());
+            log.error("[OIDC-SERVICE][VALIDATION] Token validation error: {}", e.getMessage(), e);
             return false;
         }
     }
 
     private boolean validateToken(String token) throws ParseException, IOException, JOSEException {
+        log.debug("[OIDC-SERVICE][VALIDATION] Validating token: {}", token);
         SignedJWT signedJWT = SignedJWT.parse(token);
 
         JWKSet jwkSet = JWKSet.load(new URL(jwksUrl));
-
         JWSVerifier verifier = new RSASSAVerifier(jwkSet.getKeyByKeyId(signedJWT.getHeader().getKeyID()).toRSAKey());
+
         if (!signedJWT.verify(verifier)) {
+            log.warn("[OIDC-SERVICE][VALIDATION] Token signature verification failed");
             return false;
         }
 
         if (!signedJWT.getJWTClaimsSet().getIssuer().equals(issuer)) {
+            log.warn("[OIDC-SERVICE][VALIDATION] Token issuer mismatch");
             return false;
         }
 
         if (!signedJWT.getJWTClaimsSet().getAudience().contains(clientId)) {
+            log.warn("[OIDC-SERVICE][VALIDATION] Token audience mismatch");
             return false;
         }
 
-        return !signedJWT.getJWTClaimsSet().getExpirationTime().before(new Date());
+        boolean isTokenExpired = signedJWT.getJWTClaimsSet().getExpirationTime().before(new Date());
+        if (isTokenExpired) {
+            log.warn("[OIDC-SERVICE][VALIDATION] Token is expired");
+        }
+
+        return !isTokenExpired;
     }
 
+    @Override
     public String extractFiscalCodeFromIdToken(String idToken) {
+        log.info("[OIDC-SERVICE][EXTRACT] Extracting fiscal code from ID token");
         DecodedJWT decodedJWT = JWT.decode(idToken);
-        return decodedJWT.getClaim("fiscal_code").asString();
+        String fiscalCode = decodedJWT.getClaim("fiscal_code").asString();
+        log.debug("[OIDC-SERVICE][EXTRACT] Extracted fiscal code: {}", fiscalCode);
+        return fiscalCode;
     }
-
 }
