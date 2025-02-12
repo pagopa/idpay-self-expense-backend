@@ -33,13 +33,19 @@ public class CacheServiceImpl implements CacheService {
     @Override
     public Mono<String> getFromCache(String key) {
         log.info("[CACHE-SERVICE][GET] Retrieving from cache with key: {}", key);
-        return redisTemplate.opsForValue().getAndDelete(key)
-                .doOnSuccess(value -> {
-                    if (value != null) {
+        return redisTemplate.opsForValue().get(key)
+                .flatMap(value -> {
                         log.info("[CACHE-SERVICE][GET] successfully retrieved from cache with key: {}", key);
-                    } else {
-                        log.warn("[CACHE-SERVICE][GET] No value found in cache for key: {}", key);
-                    }
+                        return redisTemplate.opsForValue().delete(key)
+                                .flatMap(result -> {
+                                    if (Boolean.TRUE.equals(result)){
+                                        log.info("[CACHE-SERVICE][GET] successfully removed key: {} from cache", key);
+                                        return Mono.just(value);
+                                    }else{
+                                        log.info("[CACHE-SERVICE][GET] key: {} not removed", key);
+                                        return  Mono.empty();
+                                    }
+                                });
                 })
                 .doOnError(e -> log.error("[CACHE-SERVICE][GET] Error retrieving from cache with key: {}", key, e));
     }
