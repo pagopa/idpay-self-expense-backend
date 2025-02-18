@@ -51,7 +51,7 @@ public class CommandMediatorServiceImpl extends BaseKafkaConsumer<QueueCommandOp
     protected void subscribeAfterCommits(Flux<List<String>> afterCommits2subscribe) {
         afterCommits2subscribe
                 .buffer(delayMinusCommit)
-                .subscribe(r -> log.info("[SELF_EXPENSE_COMMANDS] Processed offsets committed successfully"));
+                .subscribe(r -> log.info("[SELF-EXPENSE-COMMANDS] Processed offsets committed successfully"));
     }
 
     @Override
@@ -61,12 +61,12 @@ public class CommandMediatorServiceImpl extends BaseKafkaConsumer<QueueCommandOp
 
     @Override
     protected Consumer<Throwable> onDeserializationError(Message<String> message) {
-        return e -> selfExpenseErrorNotifierService.notifySelfExpenseCommands(message, "[SELF_EXPENSE_COMMANDS] Unexpected JSON", false, e);
+        return e -> selfExpenseErrorNotifierService.notifySelfExpenseCommands(message, "[SELF-EXPENSE-COMMANDS] Unexpected JSON", false, e);
     }
 
     @Override
     protected void notifyError(Message<String> message, Throwable e) {
-        selfExpenseErrorNotifierService.notifySelfExpenseCommands(message, "[SELF_EXPENSE_COMMANDS] An error occurred evaluating commands", true, e);
+        selfExpenseErrorNotifierService.notifySelfExpenseCommands(message, "[SELF-EXPENSE-COMMANDS] An error occurred evaluating commands", true, e);
     }
 
     @Override
@@ -74,13 +74,13 @@ public class CommandMediatorServiceImpl extends BaseKafkaConsumer<QueueCommandOp
         if (CommandConstants.OPERATION_TYPE_DELETE_INITIATIVE.equals(payload.getOperationType())) {
             return deleteInitiativeService.execute(payload.getEntityId());
         }
-        log.debug("[SELF_EXPENSE_COMMANDS] Invalid operation type {}", payload.getOperationType());
+        log.debug("[SELF-EXPENSE-COMMANDS] Invalid operation type {}", payload.getOperationType());
         return Mono.empty();
     }
 
     @Override
     public String getFlowName() {
-        return "SELF_EXPENSE_COMMANDS";
+        return "SELF-EXPENSE-COMMANDS";
     }
 
 

@@ -60,7 +60,8 @@ class CacheServiceTest {
     void testGetFromCache() {
         // Given
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.getAndDelete(TEST_KEY)).thenReturn(Mono.just(TEST_VALUE));
+        when(valueOperations.get(TEST_KEY)).thenReturn(Mono.just(TEST_VALUE));
+        when(valueOperations.delete(TEST_KEY)).thenReturn(Mono.just(true));
 
         // When & Then
         StepVerifier.create(cacheService.getFromCache(TEST_KEY))
@@ -69,10 +70,22 @@ class CacheServiceTest {
     }
 
     @Test
+    void testGetFromCache_deleteKo() {
+        // Given
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(TEST_KEY)).thenReturn(Mono.just(TEST_VALUE));
+        when(valueOperations.delete(TEST_KEY)).thenReturn(Mono.just(false));
+
+        // When & Then
+        StepVerifier.create(cacheService.getFromCache(TEST_KEY))
+                .verifyComplete();
+    }
+
+    @Test
     void testGetFromCache_NotFound() {
         // Given
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.getAndDelete(TEST_KEY)).thenReturn(Mono.empty());
+        when(valueOperations.get(TEST_KEY)).thenReturn(Mono.empty());
 
         // When & Then
         StepVerifier.create(cacheService.getFromCache(TEST_KEY))

@@ -15,7 +15,13 @@ public class ExpenseDataRepositoryExtImpl implements   ExpenseDataRepositoryExt{
     }
     @Override
     public Flux<ExpenseData> findByInitiativeIdWithBatch(String initiativeId, int batchSize) {
-        Query query = Query.query(Criteria.where(ExpenseData.Fields.initiativeId).is(initiativeId)).cursorBatchSize(batchSize);
+        Query query = Query.query(Criteria.where(ExpenseData.Fields.description).is(initiativeId)).cursorBatchSize(batchSize);
+        return mongoTemplate.find(query, ExpenseData.class);
+    }
+
+    @Override
+    public Flux<ExpenseData> findAllWithBatch(int batchSize) {
+        Query query =  new Query().cursorBatchSize(batchSize);
         return mongoTemplate.find(query, ExpenseData.class);
     }
 }

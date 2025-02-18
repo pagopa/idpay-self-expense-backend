@@ -39,10 +39,10 @@ class DeleteInitiativeServiceImplTest {
         ExpenseData expenseData = ExpenseData.builder()
                 .id("id")
                 .userId("userId")
-                .initiativeId(initiativeId)
+                .description("description")
                 .build();
 
-        Mockito.when(expenseDataRepository.findByInitiativeIdWithBatch(initiativeId,PAGE_SIZE))
+        Mockito.when(expenseDataRepository.findAllWithBatch(PAGE_SIZE))
                 .thenReturn(Flux.just(expenseData));
 
         Mockito.when(expenseDataRepository.deleteById(expenseData.getId()))
@@ -52,7 +52,7 @@ class DeleteInitiativeServiceImplTest {
 
         Assertions.assertNotNull(result);
 
-        Mockito.verify(expenseDataRepository, Mockito.times(1)).findByInitiativeIdWithBatch(Mockito.anyString(),Mockito.anyInt());
+        Mockito.verify(expenseDataRepository, Mockito.times(1)).findAllWithBatch(Mockito.anyInt());
         Mockito.verify(expenseDataRepository, Mockito.times(1)).deleteById(Mockito.anyString());
 
     }
@@ -60,7 +60,7 @@ class DeleteInitiativeServiceImplTest {
     @Test
     void executeError() {
         String initiativeId = "INITIATIVEID";
-        Mockito.when(expenseDataRepository.findByInitiativeIdWithBatch(initiativeId,PAGE_SIZE))
+        Mockito.when(expenseDataRepository.findAllWithBatch(PAGE_SIZE))
                 .thenThrow(new MongoException("DUMMY_EXCEPTION"));
 
         try {

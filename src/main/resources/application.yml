@@ -197,7 +197,7 @@ app:
     login-url: "https://oauth.io.pagopa.it/authorize?client_id=<client_id>&response_type=code&scope=openid&20profile&redirect_uri=<redirect_uri>&state=<state>"
     token-url: "https://example.com/session/<session-id>" #web-app link
     clientId: ${OIDC_CLIENT_ID:clientId}
-    uri: "https://api-io.dev.cstar.pagopa.it/idpay/self-expense/redirect"
+    uri: ${REDIRECT_URI:https://api-io.dev.cstar.pagopa.it/idpay/self-expense/redirect}
   rest-client:
     oidc-provider:
       jwksUrl: "https://oauth.io.pagopa.it/jwks"
