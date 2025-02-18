@@ -5,6 +5,7 @@ import it.gov.pagopa.self.expense.configuration.ExceptionMap;
 import it.gov.pagopa.self.expense.constants.Constants;
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
+import it.gov.pagopa.self.expense.event.producer.RtdProducer;
 import it.gov.pagopa.self.expense.model.AnprInfo;
 import it.gov.pagopa.self.expense.model.Child;
 import it.gov.pagopa.self.expense.model.ExpenseData;
@@ -46,6 +47,9 @@ class SelfExpenseServiceImplTest {
 
     @MockBean
     private UserFiscalCodeService userFiscalCodeService;
+
+    @MockBean
+    private RtdProducer rtdProducer;
 
     @MockBean
     private CacheService cacheService;
@@ -117,19 +121,19 @@ class SelfExpenseServiceImplTest {
 
         ExpenseDataDTO dto = buildExpenseDataDTO();
 
+        Mockito.when(expenseDataRepository.save(Mockito.any())).thenReturn(Mono.error(new RuntimeException("DB error")));
 
-        Mockito.when(expenseDataRepository.save(ExpenseDataMapper.map(dto)))
-                .thenThrow(new IllegalArgumentException("Error on db"));
-
-        Mockito.when(expenseDataRepository.save(Mockito.any(ExpenseData.class)))
-                .thenReturn(Mono.error(new RuntimeException("DB error")));
+        Mockito.when(userFiscalCodeService.getUserFiscalCode(dto.getFiscalCode()))
+                .thenReturn(Mono.just("userId"));
 
         Mono<Void> result = selfExpenseService.saveExpenseData(dto);
 
         StepVerifier.create(result)
-                .expectErrorMatches(throwable -> throwable instanceof RuntimeException &&
-                        throwable.getMessage().equals(Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB))
+                .expectErrorMatches(throwable -> throwable.getMessage().equals(Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB))
                 .verify();
+
+        Mockito.verifyNoInteractions(rtdProducer);
+
     }
 
     @Test
@@ -139,6 +143,10 @@ class SelfExpenseServiceImplTest {
 
         Mockito.when(expenseDataRepository.save(ExpenseDataMapper.map(expenseDataDTO))).thenReturn(Mono.just(expenseData));
 
+        Mockito.when(userFiscalCodeService.getUserFiscalCode(expenseDataDTO.getFiscalCode()))
+                .thenReturn(Mono.just("userId"));
+
+        Mockito.when(rtdProducer.scheduleMessage(expenseDataDTO,"userId")).thenReturn(Mono.empty());
         Mono<Void> result = selfExpenseService.saveExpenseData(expenseDataDTO);
 
         StepVerifier.create(result)
