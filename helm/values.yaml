@@ -73,7 +73,8 @@ microservice-chart:
       KAFKA_ERRORS_TOPIC: idpay_error_topic
       KAFKA_COMMANDS_BROKER: kafka_broker
       KAFKA_COMMANDS_TOPIC: idpay_commands_topic
-
+    rtd-eventhub:
+      KAFKA_RTD_BROKER: kafka_broker_rtd_domain
 
   envSecret:
     MONGODB_URI: mongodb-connection-string
@@ -81,7 +82,7 @@ microservice-chart:
     PDV_DECRYPT_API_KEY: pdv-api-key
     KAFKA_ERRORS_SASL_JAAS_CONFIG: evh-idpay-errors-idpay-errors-producer-jaas-config-idpay-01
     KAFKA_COMMANDS_SASL_JAAS_CONFIG: evh-idpay-commands-idpay-commands-consumer-jaas-config-idpay-01
-
+    KAFKA_RTD_PROD_SASL_JAAS_CONFIG: evh-rtd-trx-rtd-trx-producer-rtd
     MIL_AUTH_CLIENT_ID: mil-auth-webview-client-id
     MIL_AUTH_CLIENT_SECRET: mil-auth-webview-client-secret
     OIDC_CLIENT_ID:  oidc-client-id
