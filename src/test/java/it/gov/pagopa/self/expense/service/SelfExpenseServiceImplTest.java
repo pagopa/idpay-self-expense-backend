@@ -123,7 +123,7 @@ class SelfExpenseServiceImplTest {
 
         Mockito.when(expenseDataRepository.save(Mockito.any())).thenReturn(Mono.error(new RuntimeException("DB error")));
 
-        Mockito.when(userFiscalCodeService.getUserFiscalCode(dto.getFiscalCode()))
+        Mockito.when(userFiscalCodeService.getUserId(dto.getFiscalCode()))
                 .thenReturn(Mono.just("userId"));
 
 
@@ -144,7 +144,7 @@ class SelfExpenseServiceImplTest {
 
         Mockito.when(expenseDataRepository.save(ExpenseDataMapper.map(expenseDataDTO))).thenReturn(Mono.just(expenseData));
 
-        Mockito.when(userFiscalCodeService.getUserFiscalCode(expenseDataDTO.getFiscalCode()))
+        Mockito.when(userFiscalCodeService.getUserId(expenseDataDTO.getFiscalCode()))
                 .thenReturn(Mono.just("userId"));
 
         Mockito.when(rtdProducer.scheduleMessage(expenseDataDTO,"userId")).thenReturn(Mono.empty());
