@@ -124,8 +124,6 @@ class SelfExpenseServiceImplTest {
         Mockito.when(expenseDataRepository.save(Mockito.any())).thenReturn(Mono.error(new RuntimeException("DB error")));
 
         Mockito.when(userFiscalCodeService.getUserId(dto.getFiscalCode()))
-                .thenReturn(Mono.just("userId"));
-
 
         Mono<Void> result = selfExpenseService.saveExpenseData(dto);
 
