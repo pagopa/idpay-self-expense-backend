@@ -81,6 +81,7 @@ class SelfExpenseControllerTest {
         fileData.setContentType("file/pdf");
         List<FileData> fileList = new ArrayList<>();
         fileList.add(fileData);
+
         ExpenseDataDTO dto = ExpenseDataDTO.builder()
                 .name("nome")
                 .surname("surname")
@@ -89,7 +90,7 @@ class SelfExpenseControllerTest {
                 .companyName("company")
                 .entityId("entityId")
                 .fiscalCode("ABCQWE89T08H224W")
-                .initiativeId("initiative")
+                .description("initiative")
                 .fileList(fileList)
                 .build();
 

@@ -84,8 +84,8 @@ microservice-chart:
 
     MIL_AUTH_CLIENT_ID: mil-auth-webview-client-id
     MIL_AUTH_CLIENT_SECRET: mil-auth-webview-client-secret
-    OIDC_CLIENT_ID:  mil-auth-webview-client-id
-    OIDC_CLIENT_SECRET: mil-auth-webview-client-secret
+    OIDC_CLIENT_ID:  oidc-client-id
+    OIDC_CLIENT_SECRET: oidc-client-secret
 
     UTIL_CRYPTO_AES_SECRET_TYPE_PBE_SALT: notification-token-salt
     UTIL_CRYPTO_AES_SECRET_TYPE_PBE_PASSPHRASE: notification-token-passphrase

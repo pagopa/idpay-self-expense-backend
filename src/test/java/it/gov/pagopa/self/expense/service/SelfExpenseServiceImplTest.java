@@ -126,6 +126,7 @@ class SelfExpenseServiceImplTest {
         Mockito.when(userFiscalCodeService.getUserFiscalCode(dto.getFiscalCode()))
                 .thenReturn(Mono.just("userId"));
 
+
         Mono<Void> result = selfExpenseService.saveExpenseData(dto);
 
         StepVerifier.create(result)
@@ -160,6 +161,7 @@ class SelfExpenseServiceImplTest {
         fileData.setContentType("file/pdf");
         List<FileData> fileList = new ArrayList<>();
         fileList.add(fileData);
+
         return ExpenseDataDTO.builder()
                 .name("nome")
                 .surname("surname")
@@ -168,7 +170,7 @@ class SelfExpenseServiceImplTest {
                 .companyName("company")
                 .entityId("entityId")
                 .fiscalCode("ABCQWE89T08H224W")
-                .initiativeId("initiative")
+                .description("initiative")
                 .fileList(fileList)
                 .build();
 
