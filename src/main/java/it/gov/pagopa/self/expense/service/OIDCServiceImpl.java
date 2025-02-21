@@ -112,7 +112,7 @@ public class OIDCServiceImpl implements OIDCService {
     public String extractFiscalCodeFromIdToken(String idToken) {
         log.info("[OIDC-SERVICE][EXTRACT] Extracting fiscal code from ID token");
         DecodedJWT decodedJWT = JWT.decode(idToken);
-        String fiscalCode = decodedJWT.getClaim("fiscal_code").asString();
+        String fiscalCode = decodedJWT.getClaim("sub").asString();
         log.debug("[OIDC-SERVICE][EXTRACT] Extracted fiscal code: {}", fiscalCode);
         return fiscalCode;
     }
