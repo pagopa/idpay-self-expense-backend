@@ -93,14 +93,8 @@ public class WebviewServiceImpl implements WebviewService {
     @Override
     public Mono<String> token(String authCode, String state) {
         log.info("[WEBVIEW-SERVICE][TOKEN] Fetching state from cache: {}", state);
-        return cacheService.getFromCache(state)
-                .switchIfEmpty(Mono.error(exceptionMap.throwException(
-                        Constants.ExceptionName.STATE_NOT_FOUND,
-                        Constants.ExceptionMessage.STATE_NOT_FOUND
-                )))
-                .flatMap(result -> oidcProviderConnector.token(authCode, redirectInfo.getRedirectUri())
-                        .flatMap(this::handleOidcTokenValidation)
-                );
+        return oidcProviderConnector.token(authCode, redirectInfo.getRedirectUri())
+                        .flatMap(this::handleOidcTokenValidation);
     }
 
     private Mono<String> handleOidcTokenValidation(OIDCProviderToken oidcToken) {
