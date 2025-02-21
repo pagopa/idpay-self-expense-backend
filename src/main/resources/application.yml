@@ -226,7 +226,7 @@ app:
       clientId: ${OIDC_CLIENT_ID:clientId}
       clientSecret: ${OIDC_CLIENT_SECRET:clientId}
     mil-auth:
-      baseUrl: "https://api-mcshared.dev.cstar.pagopa.it/auth/token"
+      baseUrl: ${MIL_AUTH_BASE_URL:https://api-mcshared.dev.cstar.pagopa.it/auth/token}
       clientId: ${MIL_AUTH_CLIENT_ID:clientId}
       clientSecret: ${MIL_AUTH_CLIENT_SECRET:clientSecret}
 
