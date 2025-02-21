@@ -14,7 +14,11 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
+import java.util.Base64;
 import java.util.Date;
 
 @Slf4j
@@ -37,11 +41,11 @@ public class OIDCServiceImpl implements OIDCService {
     public boolean validateTokens(OIDCProviderToken oidcToken) {
         log.info("[OIDC-SERVICE][VALIDATION] Validating OIDC tokens");
         try {
-            if (!validateToken(oidcToken.getIdToken())) {
+            if (!validateIdToken(oidcToken.getIdToken())) {
                 log.warn("[OIDC-SERVICE][VALIDATION] ID token validation failed");
                 return false;
             }
-            boolean accessTokenValid = validateToken(oidcToken.getAccessToken());
+            boolean accessTokenValid = validateAccessToken(oidcToken.getAccessToken(), extractAtHash(oidcToken.getIdToken()));
             if (!accessTokenValid) {
                 log.warn("[OIDC-SERVICE][VALIDATION] Access token validation failed");
             }
@@ -52,9 +56,28 @@ public class OIDCServiceImpl implements OIDCService {
         }
     }
 
-    private boolean validateToken(String token) throws ParseException, IOException, JOSEException {
+    private boolean validateAccessToken(String accessToken, String hashExpected) throws NoSuchAlgorithmException {
+        String hashAlgorithm = "SHA-256";
+
+        byte[] accessTokenBytes = accessToken.getBytes(StandardCharsets.US_ASCII);
+
+        MessageDigest digest = MessageDigest.getInstance(hashAlgorithm);
+        byte[] hash = digest.digest(accessTokenBytes);
+
+
+        byte[] leftHalf = new byte[hash.length / 2];
+        System.arraycopy(hash, 0, leftHalf, 0, leftHalf.length);
+
+
+        String hashActual = Base64.getUrlEncoder().withoutPadding().encodeToString(leftHalf);
+
+        return hashActual.equals(hashExpected);
+    }
+
+    private boolean validateIdToken(String token) throws IOException, JOSEException, ParseException {
         log.debug("[OIDC-SERVICE][VALIDATION] Validating token: {}", token);
         SignedJWT signedJWT = SignedJWT.parse(token);
+
 
         JWKSet jwkSet = JWKSet.load(new URL(jwksUrl));
         JWSVerifier verifier = new RSASSAVerifier(jwkSet.getKeyByKeyId(signedJWT.getHeader().getKeyID()).toRSAKey());
@@ -82,6 +105,9 @@ public class OIDCServiceImpl implements OIDCService {
         return !isTokenExpired;
     }
 
+
+
+
     @Override
     public String extractFiscalCodeFromIdToken(String idToken) {
         log.info("[OIDC-SERVICE][EXTRACT] Extracting fiscal code from ID token");
@@ -89,5 +115,14 @@ public class OIDCServiceImpl implements OIDCService {
         String fiscalCode = decodedJWT.getClaim("fiscal_code").asString();
         log.debug("[OIDC-SERVICE][EXTRACT] Extracted fiscal code: {}", fiscalCode);
         return fiscalCode;
+    }
+
+    @Override
+    public String extractAtHash(String idToken) {
+        log.info("[OIDC-SERVICE][EXTRACT] Extracting at hash from ID token");
+        DecodedJWT decodedJWT = JWT.decode(idToken);
+        String atHash = decodedJWT.getClaim("at_hash").asString();
+        log.debug("[OIDC-SERVICE][EXTRACT] Extracted at hash: {}", atHash);
+        return atHash;
     }
 }
