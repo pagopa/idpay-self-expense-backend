@@ -222,7 +222,7 @@ app:
     oidc-provider:
       jwksUrl: "https://oauth.io.pagopa.it/jwks"
       issuer: "https://oauth.io.pagopa.it"
-      baseUrl: "https://oauth.io.pagopa.it/authorize"
+      baseUrl: "https://oauth.io.pagopa.it/token"
       clientId: ${OIDC_CLIENT_ID:clientId}
       clientSecret: ${OIDC_CLIENT_SECRET:clientId}
     mil-auth:
