@@ -42,7 +42,7 @@ public class WebviewControllerImpl implements  WebviewController{
     }
     @Override
     public Mono<ResponseEntity<MilAuthAccessToken>> mock(String sessionId) {
-        return webviewService.session(sessionId)
+        return webviewService.mock(sessionId)
                 .map(ResponseEntity::ok);
     }
 }
