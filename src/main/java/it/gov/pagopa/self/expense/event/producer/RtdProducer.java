@@ -42,6 +42,7 @@ public class RtdProducer {
             .amount(BigDecimal.valueOf(expenseData.getAmount()))
             .amountCurrency("EUR")
             .fiscalCode(expenseData.getFiscalCode())
+            .businessName(expenseData.getCompanyName())
             .build();
 
     return MessageBuilder

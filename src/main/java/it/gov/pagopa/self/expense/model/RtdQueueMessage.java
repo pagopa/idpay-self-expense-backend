@@ -36,4 +36,5 @@ public class RtdQueueMessage {
     private String vat;
     private String posType;
     private String par;
+    private String businessName;
 }
