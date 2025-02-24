@@ -120,7 +120,8 @@ public class WebviewServiceImpl implements WebviewService {
 
     private Mono<String> generateSessionAndSaveToCache(OIDCProviderToken oidcToken, MilAuthAccessToken milToken) {
         String fiscalCode = oidcService.extractFiscalCodeFromIdToken(oidcToken.getIdToken());
-        String sessionId = Utils.generateUUID(podInfo.getPodId());
+        //String sessionId = Utils.generateUUID(podInfo.getPodId());
+        String sessionId = "FRONT-END-TEST";
         log.info("[WEBVIEW-SERVICE][TOKEN] Generated sessionId: {}", sessionId);
         try {
             return cacheService.saveToCache(sessionId, objectMapper.writeValueAsString(milToken))
