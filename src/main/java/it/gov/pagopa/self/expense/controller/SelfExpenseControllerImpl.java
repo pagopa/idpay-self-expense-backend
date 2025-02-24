@@ -4,12 +4,10 @@ import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import it.gov.pagopa.self.expense.service.SelfExpenseService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 @RestController
-@CrossOrigin(origins = "https://welfare.uat.cstar.pagopa.it/")
 public class SelfExpenseControllerImpl implements SelfExpenseController{
 
     private final SelfExpenseService selfExpenseService;
