@@ -5,6 +5,7 @@ import it.gov.pagopa.self.expense.model.MilAuthAccessToken;
 import it.gov.pagopa.self.expense.service.WebviewService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
@@ -36,6 +37,7 @@ public class WebviewControllerImpl implements  WebviewController{
     }
 
     @Override
+    @CrossOrigin(origins = "https://welfare.uat.cstar.pagopa.it/")
     public Mono<ResponseEntity<MilAuthAccessToken>> session(String sessionId) {
         return webviewService.session(sessionId)
                 .map(ResponseEntity::ok);
