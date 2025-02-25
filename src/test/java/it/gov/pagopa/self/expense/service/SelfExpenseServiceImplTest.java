@@ -21,6 +21,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -159,7 +160,7 @@ class SelfExpenseServiceImplTest {
         return ExpenseDataDTO.builder()
                 .name("nome")
                 .surname("surname")
-                .amount(10.20)
+                .amount(new BigDecimal("10.20"))
                 .expenseDate(LocalDateTime.now())
                 .companyName("company")
                 .entityId("entityId")

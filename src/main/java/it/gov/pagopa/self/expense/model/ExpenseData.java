@@ -19,7 +19,7 @@ public class ExpenseData {
     private String id;
     private String name;
     private String surname;
-    private Double amount;
+    private Long amountCents;
     private LocalDateTime expenseDate;
     private String companyName;
     private String entityId;

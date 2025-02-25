@@ -1,6 +1,7 @@
 package it.gov.pagopa.self.expense.event.producer;
 
 
+import it.gov.pagopa.common.utils.CommonUtilities;
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import it.gov.pagopa.self.expense.model.RtdQueueMessage;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,8 @@ public class RtdProducer {
   }
 
   private Message<RtdQueueMessage> buildMessage(ExpenseDataDTO expenseData) {
+    Long amountCents = CommonUtilities.euroToCents(expenseData.getAmount());
+
     RtdQueueMessage rtdQueueMessage = RtdQueueMessage.builder()
             .idTrxAcquirer(UUID.randomUUID().toString().concat("_ACQUIRER_TRX").concat(String.valueOf(OffsetDateTime.now().toEpochSecond())))
             .acquirerCode("ACQUIRER_CODE")
@@ -39,7 +42,7 @@ public class RtdProducer {
             .hpan("IDPAY_".concat(expenseData.getFiscalCode()))
             .operationType("00")
             .correlationId(UUID.randomUUID().toString().concat("_RTD_").concat(String.valueOf(OffsetDateTime.now().toEpochSecond())))
-            .amount(BigDecimal.valueOf(expenseData.getAmount()))
+            .amount(new BigDecimal(amountCents))
             .amountCurrency("EUR")
             .fiscalCode(expenseData.getFiscalCode())
             .businessName(expenseData.getCompanyName())

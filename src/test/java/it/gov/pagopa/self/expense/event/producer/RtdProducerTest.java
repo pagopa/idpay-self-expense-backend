@@ -13,6 +13,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 @ExtendWith(SpringExtension.class)
@@ -33,7 +34,7 @@ class RtdProducerTest {
     @Test
      void testScheduleMessage() {
         ExpenseDataDTO expenseData = ExpenseDataDTO.builder()
-                .amount(100.0)
+                .amount(new BigDecimal("100.0"))
                 .fiscalCode("testFiscalCode")
                 .build();
 

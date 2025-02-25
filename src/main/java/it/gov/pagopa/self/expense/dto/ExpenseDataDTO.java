@@ -4,6 +4,7 @@ import it.gov.pagopa.self.expense.model.FileData;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,7 +14,7 @@ public class ExpenseDataDTO {
 
     private String name;
     private String surname;
-    private Double amount;
+    private BigDecimal amount;
     private LocalDateTime expenseDate;
     private String companyName;
     private String entityId;

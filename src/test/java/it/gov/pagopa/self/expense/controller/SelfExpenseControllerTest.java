@@ -16,6 +16,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,7 +86,7 @@ class SelfExpenseControllerTest {
         ExpenseDataDTO dto = ExpenseDataDTO.builder()
                 .name("nome")
                 .surname("surname")
-                .amount(10.20)
+                .amount(new BigDecimal("10.20"))
                 .expenseDate(LocalDateTime.now())
                 .companyName("company")
                 .entityId("entityId")
