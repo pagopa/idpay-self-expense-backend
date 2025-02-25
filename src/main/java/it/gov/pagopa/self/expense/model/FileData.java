@@ -5,6 +5,6 @@ import lombok.Data;
 @Data
 public class FileData {
     private String contentType;
-    private byte[] data;
+    private String data;
     private String filename;
 }
