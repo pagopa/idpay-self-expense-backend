@@ -151,7 +151,7 @@ class SelfExpenseServiceImplTest {
 
     private static ExpenseDataDTO buildExpenseDataDTO() {
         FileData fileData = new FileData();
-        fileData.setData("fileData");
+        fileData.setData("fileData".getBytes());
         fileData.setFilename("file.pdf");
         fileData.setContentType("file/pdf");
         List<FileData> fileList = new ArrayList<>();
