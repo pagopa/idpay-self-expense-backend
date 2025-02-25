@@ -83,6 +83,10 @@ public class CommonUtilities {
 
     public static byte[] decodeBase64(String base64Data) {
         String sanitizedBase64Data = base64Data.replaceAll("[^A-Za-z0-9+/=]", "");
+        int paddingCount = (4 - (sanitizedBase64Data.length() % 4)) % 4;
+        for (int i = 0; i < paddingCount; i++) {
+            sanitizedBase64Data += "=";
+        }
         return Base64.getDecoder().decode(sanitizedBase64Data);
     }
 
