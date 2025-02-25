@@ -10,6 +10,7 @@ import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.Base64;
 import java.util.function.Consumer;
 
 public class CommonUtilities {
@@ -79,4 +80,9 @@ public class CommonUtilities {
             throw new IllegalStateException("Error converting request in JSON",e);
         }
     }
+
+        public static byte[] decodeBase64(String base64Data) {
+            return Base64.getDecoder().decode(base64Data);
+        }
+
 }
