@@ -42,7 +42,7 @@ class RtdProducerTest {
 
         Mockito.when(streamBridge.send(Mockito.eq("trxProducer-out-0"), Optional.ofNullable(Mockito.eq("binder")), Mockito.any())).thenReturn(true);
 
-        Mono<Void> result = rtdProducer.scheduleMessage(expenseData, userId);
+        Mono<Void> result = rtdProducer.scheduleMessage(expenseData);
 
         StepVerifier.create(result)
                 .expectComplete()

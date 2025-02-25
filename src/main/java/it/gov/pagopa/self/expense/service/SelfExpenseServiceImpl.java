@@ -66,8 +66,7 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
     public Mono<Void> saveExpenseData(ExpenseDataDTO expenseData) {
         log.info("[SELF-EXPENSE-SERVICE][SAVE] Saving expense data for user: {}", expenseData.getFiscalCode());
         return expenseDataRepository.save(ExpenseDataMapper.map(expenseData))
-                .then(userFiscalCodeService.getUserId(expenseData.getFiscalCode())
-                            .flatMap(fiscalCode -> rtdProducer.scheduleMessage(expenseData, fiscalCode)))
+                .flatMap(savedData -> rtdProducer.scheduleMessage(expenseData))
                 .doOnSuccess(result -> log.info("Expense data saved successfully for user: {}", expenseData.getFiscalCode()))
                 .onErrorResume(e -> {
                     log.error("[SELF-EXPENSE-SERVICE][SAVE] Error saving expense data for user: {}", expenseData.getFiscalCode(), e);
