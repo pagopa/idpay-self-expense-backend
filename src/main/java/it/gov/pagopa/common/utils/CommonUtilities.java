@@ -81,8 +81,9 @@ public class CommonUtilities {
         }
     }
 
-        public static byte[] decodeBase64(String base64Data) {
-            return Base64.getDecoder().decode(base64Data);
-        }
+    public static byte[] decodeBase64(String base64Data) {
+        String sanitizedBase64Data = base64Data.replaceAll("[^A-Za-z0-9+/=]", "");
+        return Base64.getDecoder().decode(sanitizedBase64Data);
+    }
 
 }
