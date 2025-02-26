@@ -5,7 +5,12 @@ microservice-chart:
     pullPolicy: Always
 
   ingress:
+    create: true
     host: "uat01.idpay.internal.uat.cstar.pagopa.it"
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3000"
+    proxyBodySize: 15m
+
 
   resources:
     requests:
