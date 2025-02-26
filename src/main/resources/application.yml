@@ -11,6 +11,8 @@ mongo:
 
 server:
   port: ${SELF_EXPENSE_PORT:8080}
+  tomcat:
+    max-http-post-size: 10MB
 
 reactor:
   bufferSize:
@@ -114,7 +116,9 @@ spring:
                 socket.connection.setup.timeout:
                   max.ms: ${KAFKA_COMMANDS_CONNECTION_TIMEOUT_MAX_MS:${KAFKA_CONSUMER_CONFIG_CONNECTION_TIMEOUT_MAX_MS:200000}}
                   ms: ${KAFKA_COMMANDS_CONNECTION_TIMEOUT_MS:${KAFKA_CONSUMER_CONFIG_CONNECTION_TIMEOUT_MS:100000}}
-
+  servlet:
+    multipart:
+      enabled: false
 
   data:
     redis:
