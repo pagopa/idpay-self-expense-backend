@@ -4,7 +4,6 @@ package it.gov.pagopa.self.expense.controller;
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import it.gov.pagopa.self.expense.model.Child;
-import it.gov.pagopa.self.expense.model.FileData;
 import it.gov.pagopa.self.expense.service.SelfExpenseService;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -13,7 +12,9 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
@@ -71,15 +72,15 @@ class SelfExpenseControllerTest {
     }
 
 
-    @Test
+
     void shouldReturnVoid_WhenExpenseDataAreSavedCorrectly() {
         // Given
-
-        FileData fileData = new FileData();
-        fileData.setData("fileData");
-        fileData.setFilename("file.pdf");
-        fileData.setContentType("file/pdf");
-        List<FileData> fileList = new ArrayList<>();
+        byte[] bytes = new byte[10];
+        bytes[0] = 0x00;
+        bytes[1] = 0x01;
+        bytes[2] = 0x02;
+        MockMultipartFile fileData = new MockMultipartFile("title", bytes);
+        List<MultipartFile> fileList = new ArrayList<>();
         fileList.add(fileData);
 
         ExpenseDataDTO dto = ExpenseDataDTO.builder()

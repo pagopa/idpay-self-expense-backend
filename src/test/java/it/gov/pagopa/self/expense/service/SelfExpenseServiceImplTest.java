@@ -9,7 +9,6 @@ import it.gov.pagopa.self.expense.event.producer.RtdProducer;
 import it.gov.pagopa.self.expense.model.AnprInfo;
 import it.gov.pagopa.self.expense.model.Child;
 import it.gov.pagopa.self.expense.model.ExpenseData;
-import it.gov.pagopa.self.expense.model.FileData;
 import it.gov.pagopa.self.expense.model.mapper.ExpenseDataMapper;
 import it.gov.pagopa.self.expense.repository.AnprInfoRepository;
 import it.gov.pagopa.self.expense.repository.ExpenseDataRepository;
@@ -18,6 +17,8 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -155,11 +156,12 @@ class SelfExpenseServiceImplTest {
     }
 
     private static ExpenseDataDTO buildExpenseDataDTO() {
-        FileData fileData = new FileData();
-        fileData.setData("fileData");
-        fileData.setFilename("file.pdf");
-        fileData.setContentType("file/pdf");
-        List<FileData> fileList = new ArrayList<>();
+        byte[] bytes = new byte[10];
+        bytes[0] = 0x00;
+        bytes[1] = 0x01;
+        bytes[2] = 0x02;
+        MockMultipartFile fileData = new MockMultipartFile("title", bytes);
+        List<MultipartFile> fileList = new ArrayList<>();
         fileList.add(fileData);
 
         return ExpenseDataDTO.builder()
