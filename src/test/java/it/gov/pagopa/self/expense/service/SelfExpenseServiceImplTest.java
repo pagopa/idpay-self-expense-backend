@@ -2,6 +2,7 @@ package it.gov.pagopa.self.expense.service;
 
 import it.gov.pagopa.common.reactive.pdv.service.UserFiscalCodeService;
 import it.gov.pagopa.self.expense.configuration.ExceptionMap;
+import it.gov.pagopa.self.expense.connector.FileStorageConnector;
 import it.gov.pagopa.self.expense.constants.Constants;
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
@@ -49,11 +50,14 @@ class SelfExpenseServiceImplTest {
     @MockBean
     private UserFiscalCodeService userFiscalCodeService;
 
+
     @MockBean
     private RtdProducer rtdProducer;
 
     @MockBean
     private CacheService cacheService;
+    @MockBean
+    private FileStorageConnector fileStorageConnector;
 
     @Autowired
     private ExceptionMap exceptionMap;
@@ -127,8 +131,15 @@ class SelfExpenseServiceImplTest {
         Mockito.when(userFiscalCodeService.getUserId(dto.getFiscalCode()))
                 .thenReturn(Mono.just("userId"));
 
+        byte[] bytes = new byte[10];
+        bytes[0] = 0x00;
+        bytes[1] = 0x01;
+        bytes[2] = 0x02;
+        MockMultipartFile fileData = new MockMultipartFile("title","title", "application/pdf",bytes);
+        List<MultipartFile> fileList = new ArrayList<>();
+        fileList.add(fileData);
 
-        Mono<Void> result = selfExpenseService.saveExpenseData(dto);
+        Mono<Void> result = selfExpenseService.saveExpenseData(fileList, dto);
 
         StepVerifier.create(result)
                 .expectErrorMatches(throwable -> throwable.getMessage().equals(Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB))
@@ -140,16 +151,26 @@ class SelfExpenseServiceImplTest {
 
     @Test
     void testSaveExpenseData_Success() {
+        byte[] bytes = new byte[10];
+        bytes[0] = 0x00;
+        bytes[1] = 0x01;
+        bytes[2] = 0x02;
+        MockMultipartFile fileData = new MockMultipartFile("title", "title","application/pdf",bytes);
+        List<MultipartFile> fileList = new ArrayList<>();
+        fileList.add(fileData);
         ExpenseDataDTO expenseDataDTO = buildExpenseDataDTO();
-        ExpenseData expenseData = ExpenseDataMapper.map(expenseDataDTO);
+        ExpenseData expenseData = ExpenseDataMapper.map(expenseDataDTO,fileList);
 
-        Mockito.when(expenseDataRepository.save(ExpenseDataMapper.map(expenseDataDTO))).thenReturn(Mono.just(expenseData));
+        Mockito.when(expenseDataRepository.save(ExpenseDataMapper.map(expenseDataDTO,fileList))).thenReturn(Mono.just(expenseData));
 
         Mockito.when(userFiscalCodeService.getUserId(expenseDataDTO.getFiscalCode()))
                 .thenReturn(Mono.just("userId"));
 
         Mockito.when(rtdProducer.scheduleMessage(expenseDataDTO,"userId")).thenReturn(Mono.empty());
-        Mono<Void> result = selfExpenseService.saveExpenseData(expenseDataDTO);
+
+
+
+        Mono<Void> result = selfExpenseService.saveExpenseData(fileList, expenseDataDTO);
 
         StepVerifier.create(result)
                 .verifyComplete();
@@ -173,7 +194,6 @@ class SelfExpenseServiceImplTest {
                 .entityId("entityId")
                 .fiscalCode("ABCQWE89T08H224W")
                 .description("initiative")
-                .fileList(fileList)
                 .build();
 
     }

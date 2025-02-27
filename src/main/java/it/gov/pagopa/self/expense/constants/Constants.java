@@ -1,6 +1,11 @@
 package it.gov.pagopa.self.expense.constants;
 
+import java.util.List;
+
 public class Constants {
+
+    public static final List<String> CONTENT_TYPES = List.of("application/pdf","image/jpeg", "image/png");
+    public static final String FILE_PATH_TEMPLATE = "%s/%s";
 
     public static final class ExceptionCode {
         public static final String LOGIN_FAIL = "LOGIN_FAIL";
@@ -14,6 +19,8 @@ public class Constants {
         public static final String UNKNOWN_ERROR = "UNKNOWN_ERROR" ;
         public static final String ANPR_INFO_NOT_FOUND = "ANPR_INFO_NOT_FOUND";
         public static final String EXPENSE_DATA_ERROR_ON_SAVE_DB = "EXPENSE_DATA_ERROR_DB_SAVE";
+        public static final String EXPENSE_DATA_FILE_SAVE = "EXPENSE_DATA_FILE_SAVE";
+        public static final String EXPENSE_DATA_FILE_VALIDATION = "EXPENSE_DATA_FILE_VALIDATION";
         private ExceptionCode() {}
     }
 
@@ -29,6 +36,9 @@ public class Constants {
         public static final String UNKNOWN_ERROR = "Operation failed for unknown reason";
         public static final String ANPR_INFO_NOT_FOUND = "Anpr info could not be found.";
         public static final String EXPENSE_DATA_ERROR_ON_SAVE_DB = "Error on save into DB expense_data document";
+        public static final String EXPENSE_DATA_FILE_SAVE = "Error on save file into blob azure";
+        public static final String EXPENSE_DATA_FILE_VALIDATION = "File validation fail";
+
         private ExceptionMessage() {}
     }
 
@@ -44,6 +54,9 @@ public class Constants {
         public static final String UNKNOWN_ERROR = "Unknown error";
         public static final String ANPR_INFO_NOT_FOUND = "Anpr info Not Found";
         public static final String EXPENSE_DATA_ERROR_ON_SAVE_DB = "Error on save into DB expense_data document";
+        public static final String EXPENSE_DATA_FILE_SAVE = "Error on save file into blob azure";
+        public static final String EXPENSE_DATA_FILE_VALIDATION = "File validation fail";
+
         private ExceptionName() {}
     }
 

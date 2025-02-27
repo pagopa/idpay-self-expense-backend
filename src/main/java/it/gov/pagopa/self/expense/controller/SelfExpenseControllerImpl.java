@@ -5,7 +5,10 @@ import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import it.gov.pagopa.self.expense.service.SelfExpenseService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @RestController
 public class SelfExpenseControllerImpl implements SelfExpenseController{
@@ -22,8 +25,8 @@ public class SelfExpenseControllerImpl implements SelfExpenseController{
     }
 
     @Override
-    public Mono<ResponseEntity<Void>> saveExpenseData(ExpenseDataDTO expenseData) {
-        return selfExpenseService.saveExpenseData(expenseData)
+    public Mono<ResponseEntity<Void>> saveExpenseData(List<MultipartFile> files, ExpenseDataDTO expenseData) {
+        return selfExpenseService.saveExpenseData(files,expenseData)
                 .then(Mono.just(ResponseEntity.ok().build()));
     }
 }

@@ -3,7 +3,6 @@ package it.gov.pagopa.self.expense.model;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.apache.qpid.proton.amqp.Binary;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -26,6 +25,5 @@ public class ExpenseData {
     private String entityId;
     private String userId;
     private String description;
-    private List<Binary> fileList;
-
+    private List<String> filesName;
 }

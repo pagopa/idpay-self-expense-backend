@@ -92,10 +92,9 @@ class SelfExpenseControllerTest {
                 .entityId("entityId")
                 .fiscalCode("ABCQWE89T08H224W")
                 .description("initiative")
-                .fileList(fileList)
                 .build();
 
-        Mockito.when(selfExpenseService.saveExpenseData(dto))
+        Mockito.when(selfExpenseService.saveExpenseData(fileList, dto))
                 .thenReturn(Mono.empty());
 
         // When & Then

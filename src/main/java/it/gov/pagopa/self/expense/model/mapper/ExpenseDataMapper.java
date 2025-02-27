@@ -2,15 +2,15 @@ package it.gov.pagopa.self.expense.model.mapper;
 
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import it.gov.pagopa.self.expense.model.ExpenseData;
-import org.apache.qpid.proton.amqp.Binary;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+import java.util.List;
 
 public class ExpenseDataMapper {
 
     private ExpenseDataMapper(){}
 
-    public static ExpenseData map(ExpenseDataDTO dto){
+    public static ExpenseData map(ExpenseDataDTO dto, List<MultipartFile> files){
         return ExpenseData.builder()
                 .name(dto.getName())
                 .surname(dto.getSurname())
@@ -20,13 +20,7 @@ public class ExpenseDataMapper {
                 .entityId(dto.getEntityId())
                 .userId(dto.getFiscalCode())
                 .description(dto.getDescription())
-                .fileList(dto.getFileList().stream().map(file -> {
-                    try {
-                        return new Binary(file.getBytes());
-                    } catch (IOException e) {
-                        throw new RuntimeException("Error processing file: " + file.getOriginalFilename(), e);
-                    }
-                }).toList())
+                .filesName(files.stream().map(MultipartFile::getOriginalFilename).toList())
                 .build();
     }
 }
