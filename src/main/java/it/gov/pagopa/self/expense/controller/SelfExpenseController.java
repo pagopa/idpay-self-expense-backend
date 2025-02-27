@@ -16,6 +16,6 @@ public interface SelfExpenseController {
 
     @PostMapping(value = "/save-expense-data", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     Mono<ResponseEntity<Void>> saveExpenseData(
-            @RequestParam("files") MultipartFile[] files,
+            @RequestPart("files") MultipartFile[] files,
             @RequestPart("expenseData") ExpenseDataDTO expenseData);
 }
