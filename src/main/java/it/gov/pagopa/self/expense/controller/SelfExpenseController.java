@@ -19,5 +19,5 @@ public interface SelfExpenseController {
     @PostMapping(value = "/save-expense-data")
     Mono<ResponseEntity<Void>> saveExpenseData(
             @RequestParam("files") List<MultipartFile> files,
-            @RequestParam("expenseData") ExpenseDataDTO expenseData);
+            @RequestPart("expenseData") ExpenseDataDTO expenseData);
 }
