@@ -136,8 +136,8 @@ class SelfExpenseServiceImplTest {
         bytes[1] = 0x01;
         bytes[2] = 0x02;
         MockMultipartFile fileData = new MockMultipartFile("title","title", "application/pdf",bytes);
-        List<MultipartFile> fileList = new ArrayList<>();
-        fileList.add(fileData);
+        MultipartFile[] fileList = new MultipartFile[1];
+        fileList[0] = fileData;
 
         Mono<Void> result = selfExpenseService.saveExpenseData(fileList, dto);
 
@@ -158,6 +158,8 @@ class SelfExpenseServiceImplTest {
         MockMultipartFile fileData = new MockMultipartFile("title", "title","application/pdf",bytes);
         List<MultipartFile> fileList = new ArrayList<>();
         fileList.add(fileData);
+        MultipartFile[] fileArray = new MultipartFile[1];
+        fileArray[0] = fileData;
         ExpenseDataDTO expenseDataDTO = buildExpenseDataDTO();
         ExpenseData expenseData = ExpenseDataMapper.map(expenseDataDTO,fileList);
 
@@ -168,9 +170,7 @@ class SelfExpenseServiceImplTest {
 
         Mockito.when(rtdProducer.scheduleMessage(expenseDataDTO,"userId")).thenReturn(Mono.empty());
 
-
-
-        Mono<Void> result = selfExpenseService.saveExpenseData(fileList, expenseDataDTO);
+        Mono<Void> result = selfExpenseService.saveExpenseData(fileArray, expenseDataDTO);
 
         StepVerifier.create(result)
                 .verifyComplete();

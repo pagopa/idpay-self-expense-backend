@@ -18,7 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 
@@ -80,8 +79,8 @@ class SelfExpenseControllerTest {
         bytes[1] = 0x01;
         bytes[2] = 0x02;
         MockMultipartFile fileData = new MockMultipartFile("title", bytes);
-        List<MultipartFile> fileList = new ArrayList<>();
-        fileList.add(fileData);
+        MultipartFile[] fileList = new MultipartFile[1];
+        fileList[0] = fileData;
 
         ExpenseDataDTO dto = ExpenseDataDTO.builder()
                 .name("nome")

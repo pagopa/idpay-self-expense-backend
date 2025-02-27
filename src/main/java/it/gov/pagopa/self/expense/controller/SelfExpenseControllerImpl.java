@@ -8,8 +8,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-
 @RestController
 public class SelfExpenseControllerImpl implements SelfExpenseController{
 
@@ -25,7 +23,7 @@ public class SelfExpenseControllerImpl implements SelfExpenseController{
     }
 
     @Override
-    public Mono<ResponseEntity<Void>> saveExpenseData(List<MultipartFile> files, ExpenseDataDTO expenseData) {
+    public Mono<ResponseEntity<Void>> saveExpenseData(MultipartFile[] files, ExpenseDataDTO expenseData) {
         return selfExpenseService.saveExpenseData(files,expenseData)
                 .then(Mono.just(ResponseEntity.ok().build()));
     }

@@ -17,6 +17,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -69,10 +70,11 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
     }
 
     @Override
-    public Mono<Void> saveExpenseData(List<MultipartFile> files, ExpenseDataDTO expenseData) {
+    public Mono<Void> saveExpenseData(MultipartFile[] files, ExpenseDataDTO expenseData) {
         log.info("[SELF-EXPENSE-SERVICE][SAVE] Saving expense data for user: {}", expenseData.getFiscalCode());
 
-        return Flux.fromIterable(files)
+        List<MultipartFile> fileList = Arrays.stream(files).toList();
+        return Flux.fromIterable(fileList)
                 .flatMap(file -> {
                     if (!fileValidation(file)) {
                         return Mono.error(exceptionMap.throwException(
@@ -80,12 +82,12 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
                                 Constants.ExceptionMessage.EXPENSE_DATA_FILE_VALIDATION));
                     }
                     return storeFile(expenseData.getFiscalCode(), file)
-                            .onErrorResume(e -> deleteUploadedFiles(expenseData.getFiscalCode(), files)
+                            .onErrorResume(e -> deleteUploadedFiles(expenseData.getFiscalCode(), fileList)
                                     .then(Mono.error(exceptionMap.throwException(
                                             Constants.ExceptionName.EXPENSE_DATA_FILE_SAVE,
                                             Constants.ExceptionMessage.EXPENSE_DATA_FILE_SAVE))));
                 })
-                .then(expenseDataRepository.save(ExpenseDataMapper.map(expenseData, files)))
+                .then(expenseDataRepository.save(ExpenseDataMapper.map(expenseData, fileList)))
                 .then(userFiscalCodeService.getUserId(expenseData.getFiscalCode())
                         .flatMap(fiscalCode -> rtdProducer.scheduleMessage(expenseData, fiscalCode)))
                 .doOnSuccess(result -> log.info("Expense data saved successfully for user: {}", expenseData.getFiscalCode()))

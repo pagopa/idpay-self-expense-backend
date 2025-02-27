@@ -5,11 +5,9 @@ import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-
 public interface SelfExpenseService {
   
     Mono<ChildResponseDTO> getChildForUserId(String userId);
 
-    Mono<Void> saveExpenseData(List<MultipartFile> files, ExpenseDataDTO expenseData);
+    Mono<Void> saveExpenseData(MultipartFile[] files, ExpenseDataDTO expenseData);
 }
