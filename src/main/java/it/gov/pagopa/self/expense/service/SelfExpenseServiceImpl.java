@@ -15,16 +15,14 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousByteChannel;
 import java.nio.channels.Channels;
-
-import java.nio.channels.ReadableByteChannel;
 import java.util.List;
 import java.util.Objects;
 
@@ -124,11 +122,11 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
                     boolean validContentType = tuple.getT2();
 
                     if (empty) {
-                        log.info("[SELF-EXPENSE-SERVICE][FILE-VALIDATION] - File is empty");
+                        log.info("[SELF-EXPENSE-SERVICE][FILE-VALIDATION] File is empty");
                     }
 
                     if (!validContentType) {
-                        log.info("[UPLOAD_FILE_MERCHANT] - ContentType not accepted: {}", Objects.requireNonNull(file.headers().getContentType()));
+                        log.info("[SELF-EXPENSE-SERVICE][FILE-VALIDATION] ContentType not accepted: {}", Objects.requireNonNull(file.headers().getContentType()));
                     }
 
                     return !empty && validContentType;
@@ -142,8 +140,8 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
                     ByteBuffer byteBuffer = ByteBuffer.allocate(dataBuffer.readableByteCount());
                     dataBuffer.toByteBuffer(byteBuffer);
                     byteBuffer.flip();
-                    try (InputStream inputStreamFile = Channels.newInputStream((ReadableByteChannel) byteBuffer.asReadOnlyBuffer())) {
-                        log.info("[UPLOAD_FILE_MERCHANT] - File {} sent to storage", filePart.filename());
+                    try (InputStream inputStreamFile = Channels.newInputStream((AsynchronousByteChannel) byteBuffer.asReadOnlyBuffer())) {
+                        log.info("[SELF-EXPENSE-SERVICE][STORE-FILE] File {} sent to storage", filePart.filename());
                         fileStorageConnector.uploadFile(inputStreamFile, String.format(Constants.FILE_PATH_TEMPLATE, fiscalCode, filePart.filename()), Objects.requireNonNull(filePart.headers().getContentType()).toString());
                     } catch (IOException e) {
                         return Mono.error(e);
@@ -157,9 +155,9 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
                 .flatMap(file -> Mono.fromRunnable(() -> {
                     try {
                         fileStorageConnector.delete(String.format(Constants.FILE_PATH_TEMPLATE, fiscalCode, file.filename()));
-                        log.info("[UPLOAD_FILE_MERCHANT] - File {} deleted from storage", file.filename());
+                        log.info("[SELF-EXPENSE-SERVICE][REVERT-UPLOAD]  File {} deleted from storage", file.filename());
                     } catch (Exception e) {
-                        log.error("[UPLOAD_FILE_MERCHANT] - Failed to delete file {}", file.filename(), e);
+                        log.error("[SELF-EXPENSE-SERVICE][REVERT-UPLOAD]  Failed to delete file {}", file.filename(), e);
                     }
                 }))
                 .then();
