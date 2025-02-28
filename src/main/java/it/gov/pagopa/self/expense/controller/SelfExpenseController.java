@@ -3,6 +3,7 @@ package it.gov.pagopa.self.expense.controller;
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
@@ -22,5 +23,5 @@ public interface SelfExpenseController {
 
     @PostMapping("/upload-files")
     Mono<ResponseEntity<List<String>>> uploadFiles
-            (@RequestParam("file") MultipartFile[] files);
+            (@RequestParam("file") FilePart[] files);
 }

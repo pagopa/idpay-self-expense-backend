@@ -4,6 +4,7 @@ import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import it.gov.pagopa.self.expense.service.SelfExpenseService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,11 +35,11 @@ public class SelfExpenseControllerImpl implements SelfExpenseController{
     }
 
     @Override
-    public Mono<ResponseEntity<List<String>>> uploadFiles(@RequestParam("file") MultipartFile[] files) {
+    public Mono<ResponseEntity<List<String>>> uploadFiles(@RequestParam("file") FilePart[] files) {
         try {
             List<String> fileNames = new ArrayList<>();
             Arrays.stream(files).forEach(file ->
-                fileNames.add(file.getOriginalFilename())
+                fileNames.add(file.filename())
             );
             return Mono.just(ResponseEntity.ok().body(fileNames));
         } catch (Exception e) {
