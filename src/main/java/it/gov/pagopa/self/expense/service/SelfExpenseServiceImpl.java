@@ -1,5 +1,6 @@
 package it.gov.pagopa.self.expense.service;
 
+import com.google.common.io.ByteSource;
 import it.gov.pagopa.common.reactive.pdv.service.UserFiscalCodeService;
 import it.gov.pagopa.self.expense.configuration.ExceptionMap;
 import it.gov.pagopa.self.expense.connector.FileStorageConnector;
@@ -20,9 +21,6 @@ import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousByteChannel;
-import java.nio.channels.Channels;
 import java.util.List;
 import java.util.Objects;
 
@@ -137,10 +135,10 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
         Flux<DataBuffer> dataBufferFlux = filePart.content();
         return  DataBufferUtils.join(dataBufferFlux)
                 .flatMap(dataBuffer -> {
-                    ByteBuffer byteBuffer = ByteBuffer.allocate(dataBuffer.readableByteCount());
-                    dataBuffer.toByteBuffer(byteBuffer);
-                    byteBuffer.flip();
-                    try (InputStream inputStreamFile = Channels.newInputStream((AsynchronousByteChannel) byteBuffer.asReadOnlyBuffer())) {
+                        byte[] bytes = new byte[dataBuffer.readableByteCount()];
+                        dataBuffer.read(bytes);
+                        DataBufferUtils.release(dataBuffer);
+                    try (InputStream inputStreamFile = ByteSource.wrap(bytes).openStream()) {
                         log.info("[SELF-EXPENSE-SERVICE][STORE-FILE] File {} sent to storage", filePart.filename());
                         fileStorageConnector.uploadFile(inputStreamFile, String.format(Constants.FILE_PATH_TEMPLATE, fiscalCode, filePart.filename()), Objects.requireNonNull(filePart.headers().getContentType()).toString());
                     } catch (IOException e) {
@@ -162,4 +160,5 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
                 }))
                 .then();
     }
+
 }
