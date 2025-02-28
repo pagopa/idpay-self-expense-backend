@@ -5,6 +5,7 @@ import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import it.gov.pagopa.self.expense.model.Child;
 import it.gov.pagopa.self.expense.service.SelfExpenseService;
+import it.gov.pagopa.self.expense.utils.MockFilePart;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -12,9 +13,8 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
@@ -73,14 +73,8 @@ class SelfExpenseControllerTest {
 
 
     void shouldReturnVoid_WhenExpenseDataAreSavedCorrectly() {
-        // Given
-        byte[] bytes = new byte[10];
-        bytes[0] = 0x00;
-        bytes[1] = 0x01;
-        bytes[2] = 0x02;
-        MockMultipartFile fileData = new MockMultipartFile("title", bytes);
-        MultipartFile[] fileList = new MultipartFile[1];
-        fileList[0] = fileData;
+
+        List<FilePart> files = MockFilePart.generateMockFileParts();
 
         ExpenseDataDTO dto = ExpenseDataDTO.builder()
                 .name("nome")
@@ -93,7 +87,7 @@ class SelfExpenseControllerTest {
                 .description("initiative")
                 .build();
 
-        Mockito.when(selfExpenseService.saveExpenseData(fileList, dto))
+        Mockito.when(selfExpenseService.saveExpenseData(files, dto))
                 .thenReturn(Mono.empty());
 
         // When & Then

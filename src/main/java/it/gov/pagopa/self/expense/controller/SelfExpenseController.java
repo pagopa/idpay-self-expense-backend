@@ -5,7 +5,6 @@ import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -18,10 +17,8 @@ public interface SelfExpenseController {
 
     @PostMapping(value = "/save-expense-data")
     Mono<ResponseEntity<Void>> saveExpenseData(
-            @RequestParam("file") MultipartFile[] files,
-            @RequestParam("expenseData") ExpenseDataDTO expenseData);
+            @RequestPart("file") List<FilePart> files,
+            @RequestPart("expenseData") ExpenseDataDTO expenseData);
 
-    @PostMapping("/upload-files")
-    Mono<ResponseEntity<List<String>>> uploadFiles
-            (@RequestParam("file") FilePart[] files);
+
 }

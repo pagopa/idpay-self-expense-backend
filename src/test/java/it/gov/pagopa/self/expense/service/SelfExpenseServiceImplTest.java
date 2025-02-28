@@ -13,18 +13,17 @@ import it.gov.pagopa.self.expense.model.ExpenseData;
 import it.gov.pagopa.self.expense.model.mapper.ExpenseDataMapper;
 import it.gov.pagopa.self.expense.repository.AnprInfoRepository;
 import it.gov.pagopa.self.expense.repository.ExpenseDataRepository;
+import it.gov.pagopa.self.expense.utils.MockFilePart;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.codec.multipart.FilePart;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @SpringBootTest(classes = { SelfExpenseServiceImpl.class, ExceptionMap.class })
@@ -131,15 +130,9 @@ class SelfExpenseServiceImplTest {
         Mockito.when(userFiscalCodeService.getUserId(dto.getFiscalCode()))
                 .thenReturn(Mono.just("userId"));
 
-        byte[] bytes = new byte[10];
-        bytes[0] = 0x00;
-        bytes[1] = 0x01;
-        bytes[2] = 0x02;
-        MockMultipartFile fileData = new MockMultipartFile("title","title", "application/pdf",bytes);
-        MultipartFile[] fileList = new MultipartFile[1];
-        fileList[0] = fileData;
+        List<FilePart> files = MockFilePart.generateMockFileParts();
 
-        Mono<Void> result = selfExpenseService.saveExpenseData(fileList, dto);
+        Mono<Void> result = selfExpenseService.saveExpenseData(files, dto);
 
         StepVerifier.create(result)
                 .expectErrorMatches(throwable -> throwable.getMessage().equals(Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB))
@@ -151,39 +144,25 @@ class SelfExpenseServiceImplTest {
 
     @Test
     void testSaveExpenseData_Success() {
-        byte[] bytes = new byte[10];
-        bytes[0] = 0x00;
-        bytes[1] = 0x01;
-        bytes[2] = 0x02;
-        MockMultipartFile fileData = new MockMultipartFile("title", "title","application/pdf",bytes);
-        List<MultipartFile> fileList = new ArrayList<>();
-        fileList.add(fileData);
-        MultipartFile[] fileArray = new MultipartFile[1];
-        fileArray[0] = fileData;
+        List<FilePart> files = MockFilePart.generateMockFileParts();
         ExpenseDataDTO expenseDataDTO = buildExpenseDataDTO();
-        ExpenseData expenseData = ExpenseDataMapper.map(expenseDataDTO,fileList);
+        ExpenseData expenseData = ExpenseDataMapper.map(expenseDataDTO,files);
 
-        Mockito.when(expenseDataRepository.save(ExpenseDataMapper.map(expenseDataDTO,fileList))).thenReturn(Mono.just(expenseData));
+        Mockito.when(expenseDataRepository.save(ExpenseDataMapper.map(expenseDataDTO,files))).thenReturn(Mono.just(expenseData));
 
         Mockito.when(userFiscalCodeService.getUserId(expenseDataDTO.getFiscalCode()))
                 .thenReturn(Mono.just("userId"));
 
         Mockito.when(rtdProducer.scheduleMessage(expenseDataDTO,"userId")).thenReturn(Mono.empty());
 
-        Mono<Void> result = selfExpenseService.saveExpenseData(fileArray, expenseDataDTO);
+        Mono<Void> result = selfExpenseService.saveExpenseData(files, expenseDataDTO);
 
         StepVerifier.create(result)
                 .verifyComplete();
     }
 
     private static ExpenseDataDTO buildExpenseDataDTO() {
-        byte[] bytes = new byte[10];
-        bytes[0] = 0x00;
-        bytes[1] = 0x01;
-        bytes[2] = 0x02;
-        MockMultipartFile fileData = new MockMultipartFile("title", bytes);
-        List<MultipartFile> fileList = new ArrayList<>();
-        fileList.add(fileData);
+
 
         return ExpenseDataDTO.builder()
                 .name("nome")

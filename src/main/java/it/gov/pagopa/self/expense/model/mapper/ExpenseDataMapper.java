@@ -2,7 +2,7 @@ package it.gov.pagopa.self.expense.model.mapper;
 
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import it.gov.pagopa.self.expense.model.ExpenseData;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.codec.multipart.FilePart;
 
 import java.util.List;
 
@@ -10,7 +10,7 @@ public class ExpenseDataMapper {
 
     private ExpenseDataMapper(){}
 
-    public static ExpenseData map(ExpenseDataDTO dto, List<MultipartFile> files){
+    public static ExpenseData map(ExpenseDataDTO dto, List<FilePart> files){
         return ExpenseData.builder()
                 .name(dto.getName())
                 .surname(dto.getSurname())
@@ -20,7 +20,7 @@ public class ExpenseDataMapper {
                 .entityId(dto.getEntityId())
                 .userId(dto.getFiscalCode())
                 .description(dto.getDescription())
-                .filesName(files.stream().map(MultipartFile::getOriginalFilename).toList())
+                .filesName(files.stream().map(FilePart::filename).toList())
                 .build();
     }
 }

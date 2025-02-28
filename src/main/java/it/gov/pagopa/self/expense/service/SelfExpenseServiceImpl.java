@@ -11,14 +11,22 @@ import it.gov.pagopa.self.expense.model.mapper.ExpenseDataMapper;
 import it.gov.pagopa.self.expense.repository.AnprInfoRepository;
 import it.gov.pagopa.self.expense.repository.ExpenseDataRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+
+import java.nio.channels.ReadableByteChannel;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -70,23 +78,23 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
     }
 
     @Override
-    public Mono<Void> saveExpenseData(MultipartFile[] files, ExpenseDataDTO expenseData) {
+    public Mono<Void> saveExpenseData(List<FilePart> fileList, ExpenseDataDTO expenseData) {
         log.info("[SELF-EXPENSE-SERVICE][SAVE] Saving expense data for user: {}", expenseData.getFiscalCode());
 
-        List<MultipartFile> fileList = Arrays.stream(files).toList();
         return Flux.fromIterable(fileList)
-                .flatMap(file -> {
-                    if (!fileValidation(file)) {
-                        return Mono.error(exceptionMap.throwException(
-                                Constants.ExceptionName.EXPENSE_DATA_FILE_VALIDATION,
-                                Constants.ExceptionMessage.EXPENSE_DATA_FILE_VALIDATION));
-                    }
-                    return storeFile(expenseData.getFiscalCode(), file)
-                            .onErrorResume(e -> deleteUploadedFiles(expenseData.getFiscalCode(), fileList)
-                                    .then(Mono.error(exceptionMap.throwException(
-                                            Constants.ExceptionName.EXPENSE_DATA_FILE_SAVE,
-                                            Constants.ExceptionMessage.EXPENSE_DATA_FILE_SAVE))));
-                })
+                .flatMap(file -> fileValidation(file)
+                        .flatMap(isValid -> {
+                            if (Boolean.FALSE.equals(isValid)) {
+                                return Mono.error(exceptionMap.throwException(
+                                        Constants.ExceptionName.EXPENSE_DATA_FILE_VALIDATION,
+                                        Constants.ExceptionMessage.EXPENSE_DATA_FILE_VALIDATION));
+                            }
+                            return storeFile(expenseData.getFiscalCode(), file)
+                                    .onErrorResume(e -> deleteUploadedFiles(expenseData.getFiscalCode(), fileList)
+                                            .then(Mono.error(exceptionMap.throwException(
+                                                    Constants.ExceptionName.EXPENSE_DATA_FILE_SAVE,
+                                                    Constants.ExceptionMessage.EXPENSE_DATA_FILE_SAVE))));
+                        }))
                 .then(expenseDataRepository.save(ExpenseDataMapper.map(expenseData, fileList)))
                 .then(userFiscalCodeService.getUserId(expenseData.getFiscalCode())
                         .flatMap(fiscalCode -> rtdProducer.scheduleMessage(expenseData, fiscalCode)))
@@ -99,35 +107,59 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
                 });
     }
 
-    private boolean fileValidation(MultipartFile file) {
-        if (file.isEmpty()) {
-            log.info("[SELF-EXPENSE-SERVICE][FILE-VALIDATION] - File is empty");
-            return false;
-        }
-        if (!(Constants.CONTENT_TYPES.contains(file.getContentType()))) {
-            log.info("[UPLOAD_FILE_MERCHANT] - ContentType not accepted: {}", file.getContentType());
-            return false;
-        }
-        return true;
+    public Mono<Boolean> fileValidation(FilePart file) {
+
+        Mono<Boolean> isEmpty = file.content()
+                .map(DataBuffer::readableByteCount)
+                .reduce(Integer::sum)
+                .map(size -> size == 0);
+
+        Mono<Boolean> isValidContentType = Mono.justOrEmpty(file.headers().getContentType())
+                .map(contentType -> Constants.CONTENT_TYPES.contains(contentType.toString()))
+                .defaultIfEmpty(false);
+
+        return Mono.zip(isEmpty, isValidContentType)
+                .map(tuple -> {
+                    boolean empty = tuple.getT1();
+                    boolean validContentType = tuple.getT2();
+
+                    if (empty) {
+                        log.info("[SELF-EXPENSE-SERVICE][FILE-VALIDATION] - File is empty");
+                    }
+
+                    if (!validContentType) {
+                        log.info("[UPLOAD_FILE_MERCHANT] - ContentType not accepted: {}", Objects.requireNonNull(file.headers().getContentType()));
+                    }
+
+                    return !empty && validContentType;
+                });
     }
 
-    public Mono<Void> storeFile(String fiscalCode, MultipartFile file) {
-        return Mono.fromCallable(() -> {
-            log.info("[UPLOAD_FILE_MERCHANT] - File {} sent to storage", file.getOriginalFilename());
-            InputStream inputStreamFile = file.getInputStream();
-            fileStorageConnector.uploadFile(inputStreamFile, String.format(Constants.FILE_PATH_TEMPLATE, fiscalCode, file.getOriginalFilename()), file.getContentType());
-            return file;
-        }).then();
+    public Mono<Void> storeFile(String fiscalCode, FilePart filePart) {
+        Flux<DataBuffer> dataBufferFlux = filePart.content();
+        return  DataBufferUtils.join(dataBufferFlux)
+                .flatMap(dataBuffer -> {
+                    ByteBuffer byteBuffer = ByteBuffer.allocate(dataBuffer.readableByteCount());
+                    dataBuffer.toByteBuffer(byteBuffer);
+                    byteBuffer.flip();
+                    try (InputStream inputStreamFile = Channels.newInputStream((ReadableByteChannel) byteBuffer.asReadOnlyBuffer())) {
+                        log.info("[UPLOAD_FILE_MERCHANT] - File {} sent to storage", filePart.filename());
+                        fileStorageConnector.uploadFile(inputStreamFile, String.format(Constants.FILE_PATH_TEMPLATE, fiscalCode, filePart.filename()), Objects.requireNonNull(filePart.headers().getContentType()).toString());
+                    } catch (IOException e) {
+                        return Mono.error(e);
+                    }
+                    return Mono.empty();
+                });
     }
 
-    private Mono<Void> deleteUploadedFiles(String fiscalCode, List<MultipartFile> files) {
+    private Mono<Void> deleteUploadedFiles(String fiscalCode, List<FilePart> files) {
         return Flux.fromIterable(files)
                 .flatMap(file -> Mono.fromRunnable(() -> {
                     try {
-                        fileStorageConnector.delete(String.format(Constants.FILE_PATH_TEMPLATE, fiscalCode, file.getOriginalFilename()));
-                        log.info("[UPLOAD_FILE_MERCHANT] - File {} deleted from storage", file.getOriginalFilename());
+                        fileStorageConnector.delete(String.format(Constants.FILE_PATH_TEMPLATE, fiscalCode, file.filename()));
+                        log.info("[UPLOAD_FILE_MERCHANT] - File {} deleted from storage", file.filename());
                     } catch (Exception e) {
-                        log.error("[UPLOAD_FILE_MERCHANT] - Failed to delete file {}", file.getOriginalFilename(), e);
+                        log.error("[UPLOAD_FILE_MERCHANT] - Failed to delete file {}", file.filename(), e);
                     }
                 }))
                 .then();
