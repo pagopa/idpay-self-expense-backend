@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @RequestMapping("/idpay/self-expense")
 public interface SelfExpenseController {
 
@@ -17,4 +19,8 @@ public interface SelfExpenseController {
     Mono<ResponseEntity<Void>> saveExpenseData(
             @RequestParam("file") MultipartFile[] files,
             @RequestParam("expenseData") ExpenseDataDTO expenseData);
+
+    @PostMapping("/upload-files")
+    Mono<ResponseEntity<List<String>>> uploadFiles
+            (@RequestParam("file") MultipartFile[] files);
 }
