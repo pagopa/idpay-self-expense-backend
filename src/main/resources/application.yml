@@ -28,6 +28,9 @@ spring:
   config:
     activate:
       on-profile: default
+  servlet:
+    multipart:
+      max-file-size: ${MERCHANT_FILE_MAX_FILE_SIZE:10485760} #10 MB
   cloud:
     function:
       definition: errors;consumerCommands
