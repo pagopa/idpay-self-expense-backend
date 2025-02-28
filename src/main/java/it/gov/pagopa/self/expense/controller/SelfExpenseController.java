@@ -2,7 +2,6 @@ package it.gov.pagopa.self.expense.controller;
 
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,8 +13,8 @@ public interface SelfExpenseController {
     @GetMapping(value = "/get-child/{milAuthToken}")
     Mono<ResponseEntity<ChildResponseDTO>> getChildForUserId(@PathVariable("milAuthToken") String milAuthToken);
 
-    @PostMapping(value = "/save-expense-data", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/save-expense-data")
     Mono<ResponseEntity<Void>> saveExpenseData(
-            @RequestPart("files") MultipartFile[] files,
-            @RequestPart("expenseData") ExpenseDataDTO expenseData);
+            @RequestParam("file") MultipartFile[] files,
+            @RequestParam("expenseData") ExpenseDataDTO expenseData);
 }
