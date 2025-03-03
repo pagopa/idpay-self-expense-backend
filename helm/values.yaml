@@ -34,6 +34,9 @@ microservice-chart:
     create: true
     path: /idpayselfexpensebackend/(.*)
     servicePort: 8080
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3000"
+    proxyBodySize: 15m
 
   serviceAccount:
     create: false
@@ -62,6 +65,7 @@ microservice-chart:
     _JAVA_OPTIONS: "-Djava.util.concurrent.ForkJoinPool.common.parallelism=7 -Dio.netty.eventLoopThreads=100 -Dreactor.netty.ioWorkerCount=4 -Dreactor.netty.pool.maxConnections=16"
     HEALTH_MONGO_ENABLED: "false"
     KAFKA_COMMANDS_GROUP_ID: "idpay-commands-self-expense-consumer-group"
+    BLOB_STORAGE_CONTAINER_REFERENCE: webview
 
   externalConfigMapValues:
     idpay-common:
@@ -91,7 +95,7 @@ microservice-chart:
     UTIL_CRYPTO_AES_SECRET_TYPE_PBE_SALT: notification-token-salt
     UTIL_CRYPTO_AES_SECRET_TYPE_PBE_PASSPHRASE: notification-token-passphrase
     UTIL_CRYPTO_AES_MODE_GCM_IV: notification-token-iv
-
+    BLOB_STORAGE_CONNECTION_STRING: webview-storage-connection-string
 
   # nodeSelector: {}
 

@@ -1,16 +1,13 @@
 package it.gov.pagopa.self.expense.dto;
 
-import it.gov.pagopa.self.expense.model.FileData;
 import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @Builder
 public class ExpenseDataDTO {
-
     private String name;
     private String surname;
     private Double amount;
@@ -19,5 +16,4 @@ public class ExpenseDataDTO {
     private String entityId;
     private String fiscalCode;
     private String description;
-    private List<FileData> fileList;
 }

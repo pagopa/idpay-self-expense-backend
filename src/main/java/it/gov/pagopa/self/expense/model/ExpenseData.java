@@ -25,6 +25,5 @@ public class ExpenseData {
     private String entityId;
     private String userId;
     private String description;
-    private List<FileData> fileList;
-
+    private List<String> filesName;
 }

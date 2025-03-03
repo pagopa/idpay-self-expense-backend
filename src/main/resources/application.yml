@@ -28,6 +28,9 @@ spring:
   config:
     activate:
       on-profile: default
+  servlet:
+    multipart:
+      max-file-size: ${MERCHANT_FILE_MAX_FILE_SIZE:10485760} #10 MB
   cloud:
     function:
       definition: errors;consumerCommands
@@ -229,4 +232,9 @@ app:
       baseUrl: ${MIL_AUTH_BASE_URL:https://api-mcshared.dev.cstar.pagopa.it/auth/token}
       clientId: ${MIL_AUTH_CLIENT_ID:clientId}
       clientSecret: ${MIL_AUTH_CLIENT_SECRET:clientSecret}
+
+blobStorage:
+  connectionString: ${BLOB_STORAGE_CONNECTION_STRING:}
+  file:
+    containerReference: ${BLOB_STORAGE_CONTAINER_REFERENCE:}
 
