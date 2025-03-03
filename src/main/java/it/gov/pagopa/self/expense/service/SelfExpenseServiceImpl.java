@@ -80,7 +80,7 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
         return validateFiles(fileList)
                 .flatMap(validFiles -> saveFiles(expenseData.getFiscalCode(), validFiles))
                 .flatMap(savedFiles -> retrieveFiscalCodeAndSaveToDatabase(expenseData, savedFiles))
-                .flatMap(savedData -> sendMessageToQueue(expenseData))
+                .flatMap(savedData  -> rtdProducer.scheduleMessage(expenseData))
                 .doOnSuccess(result -> log.info("Expense data saved successfully for user: {}", expenseData.getFiscalCode()))
                 .onErrorResume(e -> handleSaveError(expenseData.getFiscalCode(), fileList, e));
     }
@@ -124,11 +124,6 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
                         .then(Mono.error(exceptionMap.throwException(
                                 Constants.ExceptionName.EXPENSE_DATA_FISCAL_CODE_NOT_FOUND,
                                 Constants.ExceptionMessage.EXPENSE_DATA_FISCAL_CODE_NOT_FOUND))));
-    }
-
-    private Mono<Void> sendMessageToQueue(ExpenseDataDTO expenseData) {
-        return userFiscalCodeService.getUserId(expenseData.getFiscalCode())
-                .flatMap(fiscalCode -> rtdProducer.scheduleMessage(expenseData, fiscalCode));
     }
 
     private Mono<Void> handleSaveError(String fiscalCode, List<FilePart> fileList, Throwable e) {
