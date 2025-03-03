@@ -23,6 +23,7 @@ import org.springframework.http.codec.multipart.FilePart;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -167,7 +168,7 @@ class SelfExpenseServiceImplTest {
         return ExpenseDataDTO.builder()
                 .name("nome")
                 .surname("surname")
-                .amount(10.20)
+                .amount(BigDecimal.valueOf(10.20))
                 .expenseDate(LocalDateTime.now())
                 .companyName("company")
                 .entityId("entityId")
