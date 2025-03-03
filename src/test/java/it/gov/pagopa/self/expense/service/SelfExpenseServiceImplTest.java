@@ -123,10 +123,6 @@ class SelfExpenseServiceImplTest {
 
         Mockito.when(expenseDataRepository.save(Mockito.any())).thenReturn(Mono.error(new RuntimeException("DB error")));
 
-        Mockito.when(userFiscalCodeService.getUserId(dto.getFiscalCode()))
-                .thenReturn(Mono.just("userId"));
-
-
         Mono<Void> result = selfExpenseService.saveExpenseData(dto);
 
         StepVerifier.create(result)
@@ -144,10 +140,8 @@ class SelfExpenseServiceImplTest {
 
         Mockito.when(expenseDataRepository.save(ExpenseDataMapper.map(expenseDataDTO))).thenReturn(Mono.just(expenseData));
 
-        Mockito.when(userFiscalCodeService.getUserId(expenseDataDTO.getFiscalCode()))
-                .thenReturn(Mono.just("userId"));
+        Mockito.when(rtdProducer.scheduleMessage(expenseDataDTO)).thenReturn(Mono.empty());
 
-        Mockito.when(rtdProducer.scheduleMessage(expenseDataDTO,"userId")).thenReturn(Mono.empty());
         Mono<Void> result = selfExpenseService.saveExpenseData(expenseDataDTO);
 
         StepVerifier.create(result)
