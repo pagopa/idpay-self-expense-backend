@@ -150,8 +150,7 @@ class SelfExpenseServiceImplTest {
 
         Mockito.when(expenseDataRepository.save(ExpenseDataMapper.map(expenseDataDTO,files))).thenReturn(Mono.just(expenseData));
 
-        Mockito.when(userFiscalCodeService.getUserId(expenseDataDTO.getFiscalCode()))
-                .thenReturn(Mono.just("userId"));
+        Mockito.when(rtdProducer.scheduleMessage(expenseDataDTO)).thenReturn(Mono.empty());
 
         Mockito.when(rtdProducer.scheduleMessage(expenseDataDTO,"userId")).thenReturn(Mono.empty());
 

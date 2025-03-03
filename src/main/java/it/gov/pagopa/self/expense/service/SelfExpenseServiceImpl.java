@@ -77,7 +77,6 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
     @Override
     public Mono<Void> saveExpenseData(List<FilePart> fileList, ExpenseDataDTO expenseData) {
         log.info("[SELF-EXPENSE-SERVICE][SAVE] Saving expense data for user: {}", expenseData.getFiscalCode());
-
         return validateFiles(fileList)
                 .flatMap(validFiles -> saveFiles(expenseData.getFiscalCode(), validFiles))
                 .flatMap(savedFiles -> retrieveFiscalCodeAndSaveToDatabase(expenseData, savedFiles))
