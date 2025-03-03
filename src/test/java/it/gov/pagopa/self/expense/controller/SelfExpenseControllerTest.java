@@ -4,8 +4,8 @@ package it.gov.pagopa.self.expense.controller;
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import it.gov.pagopa.self.expense.model.Child;
-import it.gov.pagopa.self.expense.model.FileData;
 import it.gov.pagopa.self.expense.service.SelfExpenseService;
+import it.gov.pagopa.self.expense.utils.MockFilePart;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -13,11 +13,11 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 
@@ -71,16 +71,10 @@ class SelfExpenseControllerTest {
     }
 
 
-    @Test
-    void shouldReturnVoid_WhenExpenseDataAreSavedCorrectly() {
-        // Given
 
-        FileData fileData = new FileData();
-        fileData.setData("fileData");
-        fileData.setFilename("file.pdf");
-        fileData.setContentType("file/pdf");
-        List<FileData> fileList = new ArrayList<>();
-        fileList.add(fileData);
+    void shouldReturnVoid_WhenExpenseDataAreSavedCorrectly() {
+
+        List<FilePart> files = MockFilePart.generateMockFileParts();
 
         ExpenseDataDTO dto = ExpenseDataDTO.builder()
                 .name("nome")
@@ -91,10 +85,9 @@ class SelfExpenseControllerTest {
                 .entityId("entityId")
                 .fiscalCode("ABCQWE89T08H224W")
                 .description("initiative")
-                .fileList(fileList)
                 .build();
 
-        Mockito.when(selfExpenseService.saveExpenseData(dto))
+        Mockito.when(selfExpenseService.saveExpenseData(files, dto))
                 .thenReturn(Mono.empty());
 
         // When & Then

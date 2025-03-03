@@ -41,3 +41,4 @@ microservice-chart:
     REDIRECT_URI: "https://api-io.dev.cstar.pagopa.it/idpay/self-expense/redirect"
     WEB-VIEW-URL: "https://welfare.uat.cstar.pagopa.it/ricevute/session/<session-id>"
     MIL_AUTH_BASE_URL: "https://api-mcshared.uat.cstar.pagopa.it/auth/token"
+

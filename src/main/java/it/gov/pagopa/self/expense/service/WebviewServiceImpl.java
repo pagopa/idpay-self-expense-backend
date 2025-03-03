@@ -157,4 +157,34 @@ public class WebviewServiceImpl implements WebviewService {
             ));
         }
     }
+
+    @Override
+    public Mono<MilAuthAccessToken> mock(String sessionId) {
+        log.info("[WEBVIEW-SERVICE][MOCK] SessionId: {}", sessionId);
+        return milAuthConnector.token()
+                .flatMap(milToken ->
+                        {
+                            try {
+                                return cacheService.saveToCache(sessionId, objectMapper.writeValueAsString(milToken))
+                                       .flatMap(result -> {
+                                           if (Boolean.TRUE.equals(result)) {
+                                               log.info("[WEBVIEW-SERVICE][TOKEN] Session saved to cache: {}", sessionId);
+                                               return cacheService.saveToCache(milToken.getAccessToken(), "RNLDNL95E09L219X")
+                                                       .flatMap(accessTokenResult -> {
+                                                           if (Boolean.TRUE.equals(accessTokenResult)) {
+                                                               return Mono.just(milToken);
+                                                           }
+                                                           return null;
+                                                       });
+                                           } else {
+                                               return null;
+                                           }
+                                       });
+                            } catch (JsonProcessingException e) {
+                                return null;
+                            }
+                        }
+                );
+    }
+
 }

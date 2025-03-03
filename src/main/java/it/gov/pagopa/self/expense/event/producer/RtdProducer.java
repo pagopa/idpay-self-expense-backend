@@ -30,27 +30,28 @@ public class RtdProducer {
     this.binder = binder;
   }
 
-  private Message<RtdQueueMessage> buildMessage(ExpenseDataDTO expenseData, String userId) {
+  private Message<RtdQueueMessage> buildMessage(ExpenseDataDTO expenseData) {
     RtdQueueMessage rtdQueueMessage = RtdQueueMessage.builder()
             .idTrxAcquirer(UUID.randomUUID().toString().concat("_ACQUIRER_TRX").concat(String.valueOf(OffsetDateTime.now().toEpochSecond())))
             .acquirerCode("ACQUIRER_CODE")
             .acquirerId("ACQUIRER_ID")
             .trxDate(OffsetDateTime.now())
-            .hpan("IDPAY_".concat(userId))
+            .hpan("IDPAY_".concat(expenseData.getFiscalCode()))
             .operationType("00")
             .correlationId(UUID.randomUUID().toString().concat("_RTD_").concat(String.valueOf(OffsetDateTime.now().toEpochSecond())))
             .amount(BigDecimal.valueOf(expenseData.getAmount()))
             .amountCurrency("EUR")
             .fiscalCode(expenseData.getFiscalCode())
+            .businessName(expenseData.getCompanyName())
             .build();
 
     return MessageBuilder
             .withPayload(rtdQueueMessage)
             .build();
   }
-  public Mono<Void> scheduleMessage(ExpenseDataDTO expenseDataDTO, String userId) {
+  public Mono<Void> scheduleMessage(ExpenseDataDTO expenseDataDTO) {
     return Mono
-            .fromCallable(() -> streamBridge.send("trxProducer-out-0", binder, buildMessage(expenseDataDTO,userId)))
+            .fromCallable(() -> streamBridge.send("trxProducer-out-0", binder, buildMessage(expenseDataDTO)))
             .then();
   }
 

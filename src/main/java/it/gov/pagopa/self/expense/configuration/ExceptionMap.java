@@ -99,6 +99,30 @@ public class ExceptionMap {
                 )
         );
 
+        exceptions.put(Constants.ExceptionName.EXPENSE_DATA_FILE_SAVE, message ->
+                new ClientExceptionWithBody(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        Constants.ExceptionCode.EXPENSE_DATA_FILE_SAVE,
+                        message
+                )
+        );
+
+        exceptions.put(Constants.ExceptionName.EXPENSE_DATA_FILE_VALIDATION, message ->
+                new ClientExceptionWithBody(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        Constants.ExceptionCode.EXPENSE_DATA_FILE_VALIDATION,
+                        message
+                )
+        );
+
+        exceptions.put(Constants.ExceptionName.EXPENSE_DATA_FISCAL_CODE_NOT_FOUND, message ->
+                new ClientExceptionWithBody(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        Constants.ExceptionCode.EXPENSE_DATA_FISCAL_CODE_NOT_FOUND,
+                        message
+                )
+        );
+
     }
 
     public RuntimeException throwException(String exceptionKey, String message) {
