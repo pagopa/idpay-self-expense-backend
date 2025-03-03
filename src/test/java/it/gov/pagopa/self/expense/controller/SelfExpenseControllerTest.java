@@ -17,6 +17,7 @@ import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -79,7 +80,7 @@ class SelfExpenseControllerTest {
         ExpenseDataDTO dto = ExpenseDataDTO.builder()
                 .name("nome")
                 .surname("surname")
-                .amount(10.20)
+                .amount(BigDecimal.valueOf(10.20))
                 .expenseDate(LocalDateTime.now())
                 .companyName("company")
                 .entityId("entityId")
