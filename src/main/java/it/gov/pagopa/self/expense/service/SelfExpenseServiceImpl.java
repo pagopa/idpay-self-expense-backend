@@ -8,6 +8,7 @@ import it.gov.pagopa.self.expense.constants.Constants;
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import it.gov.pagopa.self.expense.event.producer.RtdProducer;
+import it.gov.pagopa.self.expense.model.ExpenseData;
 import it.gov.pagopa.self.expense.model.mapper.ExpenseDataMapper;
 import it.gov.pagopa.self.expense.repository.AnprInfoRepository;
 import it.gov.pagopa.self.expense.repository.ExpenseDataRepository;
@@ -77,30 +78,66 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
     public Mono<Void> saveExpenseData(List<FilePart> fileList, ExpenseDataDTO expenseData) {
         log.info("[SELF-EXPENSE-SERVICE][SAVE] Saving expense data for user: {}", expenseData.getFiscalCode());
 
-        return Flux.fromIterable(fileList)
-                .flatMap(file -> fileValidation(file)
-                        .flatMap(isValid -> {
-                            if (Boolean.FALSE.equals(isValid)) {
-                                return Mono.error(exceptionMap.throwException(
-                                        Constants.ExceptionName.EXPENSE_DATA_FILE_VALIDATION,
-                                        Constants.ExceptionMessage.EXPENSE_DATA_FILE_VALIDATION));
-                            }
-                            return storeFile(expenseData.getFiscalCode(), file)
-                                    .onErrorResume(e -> deleteUploadedFiles(expenseData.getFiscalCode(), fileList)
-                                            .then(Mono.error(exceptionMap.throwException(
-                                                    Constants.ExceptionName.EXPENSE_DATA_FILE_SAVE,
-                                                    Constants.ExceptionMessage.EXPENSE_DATA_FILE_SAVE))));
-                        }))
-                .then(expenseDataRepository.save(ExpenseDataMapper.map(expenseData, fileList)))
-                .then(userFiscalCodeService.getUserId(expenseData.getFiscalCode())
-                        .flatMap(fiscalCode -> rtdProducer.scheduleMessage(expenseData, fiscalCode)))
+        return validateFiles(fileList)
+                .flatMap(validFiles -> saveFiles(expenseData.getFiscalCode(), validFiles))
+                .flatMap(savedFiles -> retrieveFiscalCodeAndSaveToDatabase(expenseData, savedFiles))
+                .flatMap(savedData -> sendMessageToQueue(expenseData))
                 .doOnSuccess(result -> log.info("Expense data saved successfully for user: {}", expenseData.getFiscalCode()))
-                .onErrorResume(e -> {
-                    log.error("[SELF-EXPENSE-SERVICE][SAVE] Error saving expense data for user: {}", expenseData.getFiscalCode(), e);
-                    return Mono.error(exceptionMap.throwException(
-                            Constants.ExceptionName.EXPENSE_DATA_ERROR_ON_SAVE_DB,
-                            Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB));
+                .onErrorResume(e -> handleSaveError(expenseData.getFiscalCode(), fileList, e));
+    }
+
+    private Mono<List<FilePart>> validateFiles(List<FilePart> fileList) {
+        return Flux.fromIterable(fileList)
+                .flatMap(this::fileValidation)
+                .collectList()
+                .flatMap(validations -> {
+                    if (validations.contains(Boolean.FALSE)) {
+                        return Mono.error(exceptionMap.throwException(
+                                Constants.ExceptionName.EXPENSE_DATA_FILE_VALIDATION,
+                                Constants.ExceptionMessage.EXPENSE_DATA_FILE_VALIDATION));
+                    }
+                    return Mono.just(fileList);
                 });
+    }
+
+    private Mono<List<FilePart>> saveFiles(String fiscalCode, List<FilePart> fileList) {
+        return Flux.fromIterable(fileList)
+                .flatMap(file -> storeFile(fiscalCode, file))
+                .collectList()
+                .flatMap(validations -> {
+                    if (validations.contains(Boolean.FALSE)) {
+                        return Mono.error(exceptionMap.throwException(
+                                Constants.ExceptionName.EXPENSE_DATA_FILE_VALIDATION,
+                                Constants.ExceptionMessage.EXPENSE_DATA_FILE_VALIDATION));
+                    }
+                    return Mono.just(fileList);
+                });
+    }
+
+    private Mono<ExpenseData> retrieveFiscalCodeAndSaveToDatabase(ExpenseDataDTO expenseData, List<FilePart> fileList) {
+        return userFiscalCodeService.getUserId(expenseData.getFiscalCode())
+                .flatMap(fiscalCode -> expenseDataRepository.save(ExpenseDataMapper.map(expenseData, fileList))
+                        .onErrorResume(e -> deleteUploadedFiles(expenseData.getFiscalCode(), fileList)
+                                .then(Mono.error(exceptionMap.throwException(
+                                        Constants.ExceptionName.EXPENSE_DATA_ERROR_ON_SAVE_DB,
+                                        Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB)))))
+                .switchIfEmpty(deleteUploadedFiles(expenseData.getFiscalCode(), fileList)
+                        .then(Mono.error(exceptionMap.throwException(
+                                Constants.ExceptionName.EXPENSE_DATA_FISCAL_CODE_NOT_FOUND,
+                                Constants.ExceptionMessage.EXPENSE_DATA_FISCAL_CODE_NOT_FOUND))));
+    }
+
+    private Mono<Void> sendMessageToQueue(ExpenseDataDTO expenseData) {
+        return userFiscalCodeService.getUserId(expenseData.getFiscalCode())
+                .flatMap(fiscalCode -> rtdProducer.scheduleMessage(expenseData, fiscalCode));
+    }
+
+    private Mono<Void> handleSaveError(String fiscalCode, List<FilePart> fileList, Throwable e) {
+        log.error("[SELF-EXPENSE-SERVICE][SAVE] Error saving expense data for user: {}", fiscalCode, e);
+        return deleteUploadedFiles(fiscalCode, fileList)
+                .then(Mono.error(exceptionMap.throwException(
+                        Constants.ExceptionName.EXPENSE_DATA_ERROR_ON_SAVE_DB,
+                        Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB)));
     }
 
     public Mono<Boolean> fileValidation(FilePart file) {
@@ -131,20 +168,20 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
                 });
     }
 
-    public Mono<Void> storeFile(String fiscalCode, FilePart filePart) {
+    public Mono<Boolean> storeFile(String fiscalCode, FilePart filePart) {
         Flux<DataBuffer> dataBufferFlux = filePart.content();
         return  DataBufferUtils.join(dataBufferFlux)
                 .flatMap(dataBuffer -> {
-                        byte[] bytes = new byte[dataBuffer.readableByteCount()];
-                        dataBuffer.read(bytes);
-                        DataBufferUtils.release(dataBuffer);
+                    byte[] bytes = new byte[dataBuffer.readableByteCount()];
+                    dataBuffer.read(bytes);
+                    DataBufferUtils.release(dataBuffer);
                     try (InputStream inputStreamFile = ByteSource.wrap(bytes).openStream()) {
                         log.info("[SELF-EXPENSE-SERVICE][STORE-FILE] File {} sent to storage", filePart.filename());
                         fileStorageConnector.uploadFile(inputStreamFile, String.format(Constants.FILE_PATH_TEMPLATE, fiscalCode, filePart.filename()), Objects.requireNonNull(filePart.headers().getContentType()).toString());
                     } catch (IOException e) {
-                        return Mono.error(e);
+                        return Mono.just(false);
                     }
-                    return Mono.empty();
+                    return Mono.just(true);
                 });
     }
 
@@ -160,5 +197,4 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
                 }))
                 .then();
     }
-
 }
