@@ -23,7 +23,4 @@ public interface WebviewController {
     @GetMapping("/session/{sessionId}")
     Mono<ResponseEntity<MilAuthAccessToken>> session( @PathVariable String sessionId);
 
-    @GetMapping("/mock/{sessionId}")
-    Mono<ResponseEntity<MilAuthAccessToken>> mock( @PathVariable String sessionId);
-
 }
