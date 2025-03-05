@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
@@ -115,15 +114,15 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
 
     private Mono<ExpenseData> retrieveFiscalCodeAndSaveToDatabase(ExpenseDataDTO expenseData, List<FilePart> fileList) {
         return userFiscalCodeService.getUserId(expenseData.getFiscalCode())
-                .flatMap(fiscalCode -> expenseDataRepository.save(ExpenseDataMapper.map(expenseData, fileList))
-                        .onErrorResume(e -> deleteUploadedFiles(expenseData.getFiscalCode(), fileList)
-                                .then(Mono.error(exceptionMap.throwException(
+                .flatMap(fiscalCode ->
+                        expenseDataRepository.save(ExpenseDataMapper.map(expenseData, fileList))
+                                .onErrorResume(e -> Mono.error(exceptionMap.throwException(
                                         Constants.ExceptionName.EXPENSE_DATA_ERROR_ON_SAVE_DB,
-                                        Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB)))))
-                .switchIfEmpty(deleteUploadedFiles(expenseData.getFiscalCode(), fileList)
-                        .then(Mono.error(exceptionMap.throwException(
-                                Constants.ExceptionName.EXPENSE_DATA_FISCAL_CODE_NOT_FOUND,
-                                Constants.ExceptionMessage.EXPENSE_DATA_FISCAL_CODE_NOT_FOUND))));
+                                        Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB)))
+                )
+                .switchIfEmpty(Mono.error(exceptionMap.throwException(
+                        Constants.ExceptionName.EXPENSE_DATA_FISCAL_CODE_NOT_FOUND,
+                        Constants.ExceptionMessage.EXPENSE_DATA_FISCAL_CODE_NOT_FOUND)));
     }
 
     private Mono<Void> handleSaveError(String fiscalCode, List<FilePart> fileList, Throwable e) {
@@ -172,7 +171,7 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
                     try (InputStream inputStreamFile = ByteSource.wrap(bytes).openStream()) {
                         log.info("[SELF-EXPENSE-SERVICE][STORE-FILE] File {} sent to storage", filePart.filename());
                         fileStorageConnector.uploadFile(inputStreamFile, String.format(Constants.FILE_PATH_TEMPLATE, fiscalCode, filePart.filename()), Objects.requireNonNull(filePart.headers().getContentType()).toString());
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         return Mono.just(false);
                     }
                     return Mono.just(true);
