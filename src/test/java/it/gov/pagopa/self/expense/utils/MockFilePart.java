@@ -65,6 +65,22 @@ public class MockFilePart implements FilePart {
         bytes[1] = 0x01;
         bytes[2] = 0x02;
 
+        MockFilePart mockFilePart = new MockFilePart("file", "filename.pdf", MediaType.APPLICATION_PDF, bytes);
+        return Stream.of(mockFilePart).collect(Collectors.toList());
+    }
+
+    public static List<FilePart> generateMockWrongTypeFileParts() {
+        byte[] bytes = new byte[10];
+        bytes[0] = 0x00;
+        bytes[1] = 0x01;
+        bytes[2] = 0x02;
+
+        MockFilePart mockFilePart = new MockFilePart("file", "filename.txt", MediaType.TEXT_PLAIN, bytes);
+        return Stream.of(mockFilePart).collect(Collectors.toList());
+    }
+
+    public static List<FilePart> generateMockEmptyFileParts() {
+        byte[] bytes = new byte[0];
         MockFilePart mockFilePart = new MockFilePart("file", "filename.txt", MediaType.APPLICATION_PDF, bytes);
         return Stream.of(mockFilePart).collect(Collectors.toList());
     }

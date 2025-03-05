@@ -27,6 +27,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+
 @SpringBootTest(classes = { SelfExpenseServiceImpl.class, ExceptionMap.class })
 class SelfExpenseServiceImplTest {
 
@@ -119,30 +122,6 @@ class SelfExpenseServiceImplTest {
         return childResponseDTO;
     }
 
-
-
-    @Test
-    void testSaveExpenseData_Failure() {
-
-        ExpenseDataDTO dto = buildExpenseDataDTO();
-
-        Mockito.when(expenseDataRepository.save(Mockito.any())).thenReturn(Mono.error(new RuntimeException("DB error")));
-
-        Mockito.when(userFiscalCodeService.getUserId(dto.getFiscalCode()))
-                .thenReturn(Mono.just("userId"));
-
-        List<FilePart> files = MockFilePart.generateMockFileParts();
-
-        Mono<Void> result = selfExpenseService.saveExpenseData(files, dto);
-
-        StepVerifier.create(result)
-                .expectErrorMatches(throwable -> throwable.getMessage().equals(Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB))
-                .verify();
-
-        Mockito.verifyNoInteractions(rtdProducer);
-
-    }
-
     @Test
     void testSaveExpenseData_Success() {
         List<FilePart> files = MockFilePart.generateMockFileParts();
@@ -156,11 +135,94 @@ class SelfExpenseServiceImplTest {
 
         Mockito.when(rtdProducer.scheduleMessage(expenseDataDTO)).thenReturn(Mono.empty());
 
+        Mockito.doNothing().when(fileStorageConnector).uploadFile(any(),anyString(),anyString());
+
         Mono<Void> result = selfExpenseService.saveExpenseData(files, expenseDataDTO);
 
         StepVerifier.create(result)
                 .verifyComplete();
+
+        Mockito.verify(fileStorageConnector, Mockito.times(0)).delete(any());
     }
+
+    @Test
+    void testSaveExpenseData_DB_Failure() {
+        ExpenseDataDTO dto = buildExpenseDataDTO();
+
+        Mockito.when(expenseDataRepository.save(any())).thenReturn(Mono.error(new RuntimeException("DB error")));
+
+        Mockito.when(userFiscalCodeService.getUserId(dto.getFiscalCode()))
+                .thenReturn(Mono.just("userId"));
+
+        List<FilePart> files = MockFilePart.generateMockFileParts();
+
+        Mono<Void> result = selfExpenseService.saveExpenseData(files, dto);
+
+        Mockito.doNothing().when(fileStorageConnector).uploadFile(any(),anyString(),anyString());
+
+        StepVerifier.create(result)
+                .expectErrorMatches(throwable -> throwable.getMessage().equals(Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB))
+                .verify();
+
+        Mockito.verify(fileStorageConnector, Mockito.times(1)).delete(any());
+        Mockito.verifyNoInteractions(rtdProducer);
+    }
+
+    @Test
+    void testSaveExpenseData_FileValidation_Failure_EmptyFile() {
+        ExpenseDataDTO dto = buildExpenseDataDTO();
+
+        List<FilePart> files = MockFilePart.generateMockEmptyFileParts();
+
+        Mono<Void> result = selfExpenseService.saveExpenseData(files, dto);
+
+        StepVerifier.create(result)
+                .expectErrorMatches(throwable -> throwable.getMessage().equals(Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB))
+                .verify();
+
+        Mockito.verify(fileStorageConnector, Mockito.times(1)).delete(any());
+        Mockito.verifyNoInteractions(rtdProducer);
+    }
+
+    @Test
+    void testSaveExpenseData_FileValidation_Failure_WrongFileType() {
+        ExpenseDataDTO dto = buildExpenseDataDTO();
+
+        List<FilePart> files = MockFilePart.generateMockWrongTypeFileParts();
+
+        Mono<Void> result = selfExpenseService.saveExpenseData(files, dto);
+
+        Mockito.doThrow(new RuntimeException())
+                .when(fileStorageConnector)
+                .delete(anyString());
+
+        StepVerifier.create(result)
+                .expectErrorMatches(throwable -> throwable.getMessage().equals(Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB))
+                .verify();
+
+        Mockito.verifyNoInteractions(rtdProducer);
+    }
+
+    @Test
+    void testSaveExpenseData_FileSave_Failure() {
+        ExpenseDataDTO dto = buildExpenseDataDTO();
+
+        List<FilePart> files = MockFilePart.generateMockFileParts();
+
+        Mono<Void> result = selfExpenseService.saveExpenseData(files, dto);
+
+        Mockito.doThrow(new RuntimeException())
+                .when(fileStorageConnector)
+                .uploadFile(any(),anyString(),anyString());
+
+        StepVerifier.create(result)
+                .expectErrorMatches(throwable -> throwable.getMessage().equals(Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB))
+                .verify();
+
+        Mockito.verify(fileStorageConnector, Mockito.times(1)).delete(any());
+        Mockito.verifyNoInteractions(rtdProducer);
+    }
+
 
     private static ExpenseDataDTO buildExpenseDataDTO() {
 
