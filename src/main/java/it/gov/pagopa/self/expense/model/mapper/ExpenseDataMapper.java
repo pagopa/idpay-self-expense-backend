@@ -2,21 +2,26 @@ package it.gov.pagopa.self.expense.model.mapper;
 
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import it.gov.pagopa.self.expense.model.ExpenseData;
+import it.gov.pagopa.self.expense.utils.Utils;
+import org.springframework.http.codec.multipart.FilePart;
+
+import java.util.List;
 
 public class ExpenseDataMapper {
 
-    public static ExpenseData map(ExpenseDataDTO dto){
+    private ExpenseDataMapper(){}
+
+    public static ExpenseData map(ExpenseDataDTO dto, List<FilePart> files){
         return ExpenseData.builder()
                 .name(dto.getName())
                 .surname(dto.getSurname())
-                .amount(dto.getAmount())
+                .amountCents(Utils.euroToCents(dto.getAmount()))
                 .expenseDate(dto.getExpenseDate())
                 .companyName(dto.getCompanyName())
                 .entityId(dto.getEntityId())
-                //TODO da confermare se deve essere hashato
                 .userId(dto.getFiscalCode())
-                .initiativeId(dto.getInitiativeId())
-                .file(dto.getFile())
+                .description(dto.getDescription())
+                .filesName(files.stream().map(FilePart::filename).toList())
                 .build();
     }
 }

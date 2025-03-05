@@ -14,7 +14,11 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
+import java.util.Base64;
 import java.util.Date;
 
 @Slf4j
@@ -33,42 +37,92 @@ public class OIDCServiceImpl implements OIDCService {
         this.clientId = clientId;
     }
 
+    @Override
     public boolean validateTokens(OIDCProviderToken oidcToken) {
+        log.info("[OIDC-SERVICE][VALIDATION] Validating OIDC tokens");
         try {
-            if (!validateToken(oidcToken.getIdToken())) {
+            if (!validateIdToken(oidcToken.getIdToken())) {
+                log.warn("[OIDC-SERVICE][VALIDATION] ID token validation failed");
                 return false;
             }
-            return validateToken(oidcToken.getAccessToken());
+            boolean accessTokenValid = validateAccessToken(oidcToken.getAccessToken(), extractAtHash(oidcToken.getIdToken()));
+            if (!accessTokenValid) {
+                log.warn("[OIDC-SERVICE][VALIDATION] Access token validation failed");
+            }
+            return accessTokenValid;
         } catch (Exception e) {
-            log.info(e.getMessage());
+            log.error("[OIDC-SERVICE][VALIDATION] Token validation error: {}", e.getMessage(), e);
             return false;
         }
     }
 
-    private boolean validateToken(String token) throws ParseException, IOException, JOSEException {
+    private boolean validateAccessToken(String accessToken, String hashExpected) throws NoSuchAlgorithmException {
+        String hashAlgorithm = "SHA-256";
+
+        byte[] accessTokenBytes = accessToken.getBytes(StandardCharsets.US_ASCII);
+
+        MessageDigest digest = MessageDigest.getInstance(hashAlgorithm);
+        byte[] hash = digest.digest(accessTokenBytes);
+
+
+        byte[] leftHalf = new byte[hash.length / 2];
+        System.arraycopy(hash, 0, leftHalf, 0, leftHalf.length);
+
+
+        String hashActual = Base64.getUrlEncoder().withoutPadding().encodeToString(leftHalf);
+
+        return hashActual.equals(hashExpected);
+    }
+
+    private boolean validateIdToken(String token) throws IOException, JOSEException, ParseException {
+        log.debug("[OIDC-SERVICE][VALIDATION] Validating token: {}", token);
         SignedJWT signedJWT = SignedJWT.parse(token);
 
-        JWKSet jwkSet = JWKSet.load(new URL(jwksUrl));
 
+        JWKSet jwkSet = JWKSet.load(new URL(jwksUrl));
         JWSVerifier verifier = new RSASSAVerifier(jwkSet.getKeyByKeyId(signedJWT.getHeader().getKeyID()).toRSAKey());
+
         if (!signedJWT.verify(verifier)) {
+            log.warn("[OIDC-SERVICE][VALIDATION] Token signature verification failed");
             return false;
         }
 
         if (!signedJWT.getJWTClaimsSet().getIssuer().equals(issuer)) {
+            log.warn("[OIDC-SERVICE][VALIDATION] Token issuer mismatch");
             return false;
         }
 
         if (!signedJWT.getJWTClaimsSet().getAudience().contains(clientId)) {
+            log.warn("[OIDC-SERVICE][VALIDATION] Token audience mismatch");
             return false;
         }
 
-        return !signedJWT.getJWTClaimsSet().getExpirationTime().before(new Date());
+        boolean isTokenExpired = signedJWT.getJWTClaimsSet().getExpirationTime().before(new Date());
+        if (isTokenExpired) {
+            log.warn("[OIDC-SERVICE][VALIDATION] Token is expired");
+        }
+
+        return !isTokenExpired;
     }
 
+
+
+
+    @Override
     public String extractFiscalCodeFromIdToken(String idToken) {
+        log.info("[OIDC-SERVICE][EXTRACT] Extracting fiscal code from ID token");
         DecodedJWT decodedJWT = JWT.decode(idToken);
-        return decodedJWT.getClaim("fiscal_code").asString();
+        String fiscalCode = decodedJWT.getClaim("sub").asString();
+        log.debug("[OIDC-SERVICE][EXTRACT] Extracted fiscal code: {}", fiscalCode);
+        return fiscalCode;
     }
 
+    @Override
+    public String extractAtHash(String idToken) {
+        log.info("[OIDC-SERVICE][EXTRACT] Extracting at hash from ID token");
+        DecodedJWT decodedJWT = JWT.decode(idToken);
+        String atHash = decodedJWT.getClaim("at_hash").asString();
+        log.debug("[OIDC-SERVICE][EXTRACT] Extracted at hash: {}", atHash);
+        return atHash;
+    }
 }

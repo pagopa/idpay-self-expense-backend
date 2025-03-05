@@ -9,4 +9,5 @@ public interface OIDCService {
 
     String extractFiscalCodeFromIdToken(String idToken);
 
+    String extractAtHash(String idToken);
 }
