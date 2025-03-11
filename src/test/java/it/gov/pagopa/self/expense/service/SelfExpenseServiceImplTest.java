@@ -2,7 +2,7 @@ package it.gov.pagopa.self.expense.service;
 
 import it.gov.pagopa.common.reactive.pdv.service.UserFiscalCodeService;
 import it.gov.pagopa.self.expense.configuration.ExceptionMap;
-import it.gov.pagopa.self.expense.connector.FileStorageConnector;
+import it.gov.pagopa.self.expense.connector.FileStorageAsyncConnector;
 import it.gov.pagopa.self.expense.constants.Constants;
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
@@ -60,7 +60,7 @@ class SelfExpenseServiceImplTest {
     @MockBean
     private CacheService cacheService;
     @MockBean
-    private FileStorageConnector fileStorageConnector;
+    private FileStorageAsyncConnector fileStorageAsyncConnector;
 
     @Autowired
     private ExceptionMap exceptionMap;
@@ -135,14 +135,14 @@ class SelfExpenseServiceImplTest {
 
         Mockito.when(rtdProducer.scheduleMessage(expenseDataDTO)).thenReturn(Mono.empty());
 
-        Mockito.doNothing().when(fileStorageConnector).uploadFile(any(),anyString(),anyString());
+        Mockito.when(fileStorageAsyncConnector.uploadFile(any(), anyString(), anyString())).thenReturn(Mono.just(true));
 
         Mono<Void> result = selfExpenseService.saveExpenseData(files, expenseDataDTO);
 
         StepVerifier.create(result)
                 .verifyComplete();
 
-        Mockito.verify(fileStorageConnector, Mockito.times(0)).delete(any());
+        Mockito.verify(fileStorageAsyncConnector, Mockito.times(0)).delete(any());
     }
 
     @Test
@@ -158,13 +158,15 @@ class SelfExpenseServiceImplTest {
 
         Mono<Void> result = selfExpenseService.saveExpenseData(files, dto);
 
-        Mockito.doNothing().when(fileStorageConnector).uploadFile(any(),anyString(),anyString());
+        Mockito.when(fileStorageAsyncConnector.uploadFile(any(), anyString(), anyString())).thenReturn(Mono.just(true));
+
+        Mockito.when(fileStorageAsyncConnector.delete(anyString())).thenReturn(Mono.just(true));
 
         StepVerifier.create(result)
                 .expectErrorMatches(throwable -> throwable.getMessage().equals(Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB))
                 .verify();
 
-        Mockito.verify(fileStorageConnector, Mockito.times(1)).delete(any());
+        Mockito.verify(fileStorageAsyncConnector, Mockito.times(1)).delete(any());
         Mockito.verifyNoInteractions(rtdProducer);
     }
 
@@ -176,11 +178,13 @@ class SelfExpenseServiceImplTest {
 
         Mono<Void> result = selfExpenseService.saveExpenseData(files, dto);
 
+        Mockito.when(fileStorageAsyncConnector.delete(anyString())).thenReturn(Mono.just(true));
+
         StepVerifier.create(result)
                 .expectErrorMatches(throwable -> throwable.getMessage().equals(Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB))
                 .verify();
 
-        Mockito.verify(fileStorageConnector, Mockito.times(1)).delete(any());
+        Mockito.verify(fileStorageAsyncConnector, Mockito.times(1)).delete(any());
         Mockito.verifyNoInteractions(rtdProducer);
     }
 
@@ -192,9 +196,7 @@ class SelfExpenseServiceImplTest {
 
         Mono<Void> result = selfExpenseService.saveExpenseData(files, dto);
 
-        Mockito.doThrow(new RuntimeException())
-                .when(fileStorageConnector)
-                .delete(anyString());
+        Mockito.when(fileStorageAsyncConnector.delete(anyString())).thenReturn(Mono.just(true));
 
         StepVerifier.create(result)
                 .expectErrorMatches(throwable -> throwable.getMessage().equals(Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB))
@@ -211,15 +213,15 @@ class SelfExpenseServiceImplTest {
 
         Mono<Void> result = selfExpenseService.saveExpenseData(files, dto);
 
-        Mockito.doThrow(new RuntimeException())
-                .when(fileStorageConnector)
-                .uploadFile(any(),anyString(),anyString());
+        Mockito.when(fileStorageAsyncConnector.uploadFile(any(), anyString(), anyString())).thenReturn(Mono.just(false));
+
+        Mockito.when(fileStorageAsyncConnector.delete(anyString())).thenReturn(Mono.just(true));
 
         StepVerifier.create(result)
                 .expectErrorMatches(throwable -> throwable.getMessage().equals(Constants.ExceptionMessage.EXPENSE_DATA_ERROR_ON_SAVE_DB))
                 .verify();
 
-        Mockito.verify(fileStorageConnector, Mockito.times(1)).delete(any());
+        Mockito.verify(fileStorageAsyncConnector, Mockito.times(1)).delete(any());
         Mockito.verifyNoInteractions(rtdProducer);
     }
 

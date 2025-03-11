@@ -1,9 +1,8 @@
 package it.gov.pagopa.self.expense.service;
 
-import com.google.common.io.ByteSource;
 import it.gov.pagopa.common.reactive.pdv.service.UserFiscalCodeService;
 import it.gov.pagopa.self.expense.configuration.ExceptionMap;
-import it.gov.pagopa.self.expense.connector.FileStorageConnector;
+import it.gov.pagopa.self.expense.connector.FileStorageAsyncConnector;
 import it.gov.pagopa.self.expense.constants.Constants;
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
@@ -14,15 +13,17 @@ import it.gov.pagopa.self.expense.repository.AnprInfoRepository;
 import it.gov.pagopa.self.expense.repository.ExpenseDataRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 @Slf4j
 @Service
@@ -34,9 +35,8 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
     private final CacheService cacheService;
     private final UserFiscalCodeService userFiscalCodeService;
     private final RtdProducer rtdProducer;
-
-    private final FileStorageConnector fileStorageConnector;
-    public SelfExpenseServiceImpl(AnprInfoRepository anprInfoRepository, ExceptionMap exceptionMap, ExpenseDataRepository expenseDataRepository, CacheService cacheService, UserFiscalCodeService userFiscalCodeService, RtdProducer rtdProducer, FileStorageConnector fileStorageConnector) {
+    private final FileStorageAsyncConnector fileStorageConnector;
+    public SelfExpenseServiceImpl(AnprInfoRepository anprInfoRepository, ExceptionMap exceptionMap, ExpenseDataRepository expenseDataRepository, CacheService cacheService, UserFiscalCodeService userFiscalCodeService, RtdProducer rtdProducer, FileStorageAsyncConnector fileStorageConnector) {
         this.anprInfoRepository = anprInfoRepository;
         this.expenseDataRepository = expenseDataRepository;
         this.exceptionMap = exceptionMap;
@@ -163,31 +163,32 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
 
     public Mono<Boolean> storeFile(String fiscalCode, FilePart filePart) {
         Flux<DataBuffer> dataBufferFlux = filePart.content();
-        return  DataBufferUtils.join(dataBufferFlux)
-                .flatMap(dataBuffer -> {
-                    byte[] bytes = new byte[dataBuffer.readableByteCount()];
-                    dataBuffer.read(bytes);
-                    DataBufferUtils.release(dataBuffer);
-                    try (InputStream inputStreamFile = ByteSource.wrap(bytes).openStream()) {
-                        log.info("[SELF-EXPENSE-SERVICE][STORE-FILE] File {} sent to storage", filePart.filename());
-                        fileStorageConnector.uploadFile(inputStreamFile, String.format(Constants.FILE_PATH_TEMPLATE, fiscalCode, filePart.filename()), Objects.requireNonNull(filePart.headers().getContentType()).toString());
-                    } catch (Exception e) {
-                        return Mono.just(false);
-                    }
-                    return Mono.just(true);
-                });
+        Flux<ByteBuffer> byteBufferFlux = dataBufferFlux.flatMapSequential(dataBuffer -> {
+            Iterator<ByteBuffer> iterator = dataBuffer.readableByteBuffers();
+            Stream<ByteBuffer> stream = StreamSupport.stream(((Iterable<ByteBuffer>) () -> iterator).spliterator(), false);
+            return Flux.fromStream(stream);
+        });
+        return fileStorageConnector.uploadFile(
+                    byteBufferFlux,
+                    String.format(Constants.FILE_PATH_TEMPLATE, fiscalCode, filePart.filename()),
+                    Objects.requireNonNull(filePart.headers().getContentType()).toString());
+
+
     }
 
     private Mono<Void> deleteUploadedFiles(String fiscalCode, List<FilePart> files) {
         return Flux.fromIterable(files)
-                .flatMap(file -> Mono.fromRunnable(() -> {
-                    try {
-                        fileStorageConnector.delete(String.format(Constants.FILE_PATH_TEMPLATE, fiscalCode, file.filename()));
-                        log.info("[SELF-EXPENSE-SERVICE][REVERT-UPLOAD]  File {} deleted from storage", file.filename());
-                    } catch (Exception e) {
-                        log.error("[SELF-EXPENSE-SERVICE][REVERT-UPLOAD]  Failed to delete file {}", file.filename(), e);
-                    }
-                }))
+                .flatMap(file ->
+                        fileStorageConnector.delete(String.format(Constants.FILE_PATH_TEMPLATE, fiscalCode, file.filename()))
+                                .flatMap(response -> {
+                                    if (Boolean.TRUE.equals(response)) {
+                                        log.info("[SELF-EXPENSE-SERVICE][REVERT-UPLOAD] File {} deleted from storage", file.filename());
+                                    } else {
+                                        log.info("[SELF-EXPENSE-SERVICE][REVERT-UPLOAD] Failed to delete file {} from storage", file.filename());
+                                    }
+                                    return Mono.empty();
+                                })
+                )
                 .then();
     }
 }
