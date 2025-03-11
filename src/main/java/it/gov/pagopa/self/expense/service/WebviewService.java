@@ -13,4 +13,7 @@ public interface WebviewService {
 
     Mono<MilAuthAccessToken>  session(String sessionId);
 
+    Mono<MilAuthAccessToken> mock(String sessionId);
+
+
 }
