@@ -20,7 +20,7 @@ class BlobClientImplTest {
     }
 
     @Test
-    void whenDownloadMerchantFileThenDownloadMethodIsInvoked(){
+    void whenDownloadFileThenDownloadMethodIsInvoked(){
         // Given
         String filename = "FILENAME";
         ByteArrayOutputStream expectedResult = Mockito.mock(ByteArrayOutputStream.class);
@@ -36,7 +36,7 @@ class BlobClientImplTest {
     }
 
     @Test
-    void whenUploadMerchantFileThenUploadMethodIsInvoked(){
+    void whenUploadFileThenUploadMethodIsInvoked(){
         // Given
         InputStream is = Mockito.mock(InputStream.class);
         String destination = "FILENAME";
@@ -51,5 +51,21 @@ class BlobClientImplTest {
         // Then
         Mockito.verify((AzureBlobClient)merchantFileStorageConnector)
                 .upload(is, destination, contentType);
+    }
+
+    @Test
+    void whenDeleteFileThenDeleteMethodIsInvoked() {
+        // Given
+        String destination = "FILENAME";
+        Mockito.doReturn(Mockito.mock(Response.class))
+                .when((AzureBlobClient)merchantFileStorageConnector)
+                .deleteFile(destination);
+
+        // When
+        merchantFileStorageConnector.delete(destination);
+
+        // Then
+        Mockito.verify((AzureBlobClient)merchantFileStorageConnector)
+                .deleteFile(destination);
     }
 }
