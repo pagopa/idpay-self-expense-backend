@@ -2,7 +2,7 @@ package it.gov.pagopa.self.expense.connector;
 
 
 import com.azure.core.http.rest.Response;
-import it.gov.pagopa.common.azure.storage.AzureBlobClientReactiveImpl;
+import it.gov.pagopa.common.azure.storage.AzureBlobAsyncClientImpl;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -11,10 +11,10 @@ import reactor.core.publisher.Mono;
 import java.nio.ByteBuffer;
 
 @Service
-public class BlobAsyncClientImpl extends AzureBlobClientReactiveImpl implements FileStorageAsyncConnector {
+public class BlobAsyncAsyncClientImpl extends AzureBlobAsyncClientImpl implements FileStorageAsyncConnector {
 
-    BlobAsyncClientImpl(@Value("${blobStorage.connectionString}") String storageConnectionString,
-                        @Value("${blobStorage.file.containerReference}") String fileContainerReference) {
+    BlobAsyncAsyncClientImpl(@Value("${blobStorage.connectionString}") String storageConnectionString,
+                             @Value("${blobStorage.file.containerReference}") String fileContainerReference) {
         super(storageConnectionString, fileContainerReference);
     }
 
