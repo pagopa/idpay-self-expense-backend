@@ -17,7 +17,7 @@ class BlobAsyncClientImplTest {
 
     @BeforeEach
     void init(){
-        merchantFileStorageConnector = Mockito.spy(new BlobAsyncAsyncClientImpl("UseDevelopmentStorage=true;", "test"));
+        merchantFileStorageConnector = Mockito.spy(new BlobAsyncClientImpl("UseDevelopmentStorage=true;", "test"));
     }
 
     @Test
