@@ -13,11 +13,8 @@ public class ExpenseDataRepositoryExtImpl implements   ExpenseDataRepositoryExt{
     public ExpenseDataRepositoryExtImpl(ReactiveMongoTemplate mongoTemplate) {
         this.mongoTemplate = mongoTemplate;
     }
-    @Override
-    public Flux<ExpenseData> findByInitiativeIdWithBatch(String initiativeId, int batchSize) {
-        Query query = Query.query(Criteria.where(ExpenseData.Fields.description).is(initiativeId)).cursorBatchSize(batchSize);
-        return mongoTemplate.find(query, ExpenseData.class);
-    }
+
+
 
     @Override
     public Flux<ExpenseData> findAllWithBatch(int batchSize) {

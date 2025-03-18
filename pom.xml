@@ -138,7 +138,26 @@
 			<artifactId>commons-lang3</artifactId>
 			<version>3.14.0</version>
 		</dependency>
-
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>5.3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jxls</groupId>
+			<artifactId>jxls-jexcel</artifactId>
+			<version>1.0.9</version>
+		</dependency>
+		<dependency>
+			<groupId>org.dhatim</groupId>
+			<artifactId>fastexcel-reader</artifactId>
+			<version>0.18.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.dhatim</groupId>
+			<artifactId>fastexcel</artifactId>
+			<version>0.18.1</version>
+		</dependency>
 		<!-- Security fixes -->
 		<dependency>
 			<groupId>org.yaml</groupId>
@@ -226,6 +245,12 @@
 		<dependency>
 			<groupId>com.azure</groupId>
 			<artifactId>azure-storage-blob</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>it.gov.pagopa</groupId>
+			<artifactId>idpay-self-expense-backend</artifactId>
+			<version>1.0.0</version>
+			<scope>test</scope>
 		</dependency>
 
 	</dependencies>

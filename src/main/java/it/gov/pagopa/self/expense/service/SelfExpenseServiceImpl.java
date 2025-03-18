@@ -8,11 +8,14 @@ import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import it.gov.pagopa.self.expense.event.producer.RtdProducer;
 import it.gov.pagopa.self.expense.model.ExpenseData;
+import it.gov.pagopa.self.expense.model.OnboardingFamilies;
 import it.gov.pagopa.self.expense.model.mapper.ExpenseDataMapper;
 import it.gov.pagopa.self.expense.repository.AnprInfoRepository;
 import it.gov.pagopa.self.expense.repository.ExpenseDataRepository;
+import it.gov.pagopa.self.expense.repository.OnboardingFamiliesRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -36,7 +39,8 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
     private final UserFiscalCodeService userFiscalCodeService;
     private final RtdProducer rtdProducer;
     private final FileStorageAsyncConnector fileStorageConnector;
-    public SelfExpenseServiceImpl(AnprInfoRepository anprInfoRepository, ExceptionMap exceptionMap, ExpenseDataRepository expenseDataRepository, CacheService cacheService, UserFiscalCodeService userFiscalCodeService, RtdProducer rtdProducer, FileStorageAsyncConnector fileStorageConnector) {
+    private final OnboardingFamiliesRepository onboardingFamiliesRepository;
+    public SelfExpenseServiceImpl(AnprInfoRepository anprInfoRepository, ExceptionMap exceptionMap, ExpenseDataRepository expenseDataRepository, CacheService cacheService, UserFiscalCodeService userFiscalCodeService, RtdProducer rtdProducer, FileStorageAsyncConnector fileStorageConnector, OnboardingFamiliesRepository onboardingFamiliesRepository) {
         this.anprInfoRepository = anprInfoRepository;
         this.expenseDataRepository = expenseDataRepository;
         this.exceptionMap = exceptionMap;
@@ -44,6 +48,7 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
         this.userFiscalCodeService = userFiscalCodeService;
         this.rtdProducer = rtdProducer;
         this.fileStorageConnector = fileStorageConnector;
+        this.onboardingFamiliesRepository = onboardingFamiliesRepository;
     }
 
     @Override
@@ -82,6 +87,18 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
                 .flatMap(savedData  -> rtdProducer.scheduleMessage(expenseData))
                 .doOnSuccess(result -> log.info("Expense data saved successfully for user: {}", expenseData.getFiscalCode()))
                 .onErrorResume(e -> handleSaveError(expenseData.getFiscalCode(), fileList, e));
+    }
+
+    @Override
+    public Mono<ResponseEntity<byte[]>> generateReportExcel(String initiativeId) {
+
+        //Find Onboarding Family by id
+        Flux<OnboardingFamilies> families = onboardingFamiliesRepository.findByInitiativeId(initiativeId);
+        // Log each element in families
+        families.doOnNext(family -> log.info("Family: {}", family))
+                .subscribe();
+
+        return null;
     }
 
     private Mono<List<FilePart>> validateFiles(List<FilePart> fileList) {
