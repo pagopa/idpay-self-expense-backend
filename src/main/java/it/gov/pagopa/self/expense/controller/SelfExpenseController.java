@@ -22,6 +22,8 @@ public interface SelfExpenseController {
 
     @GetMapping("/download-report-excel/{initiativeId}")
     Mono<ResponseEntity<byte[]>> downloadReportExcel(@PathVariable String initiativeId) ;
-    // Implementation goes here
 
+
+    @GetMapping("/download-expense-file/{initiativeId}")
+    Mono<ResponseEntity<byte[]>> downloadExpenseFile(@PathVariable String initiativeId);
 }

@@ -6,14 +6,22 @@ import it.gov.pagopa.self.expense.connector.FileStorageAsyncConnector;
 import it.gov.pagopa.self.expense.constants.Constants;
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
+import it.gov.pagopa.self.expense.dto.ReportExcelDTO;
+import it.gov.pagopa.self.expense.enums.OnboardingFamilyEvaluationStatus;
 import it.gov.pagopa.self.expense.event.producer.RtdProducer;
+import it.gov.pagopa.self.expense.model.AnprInfo;
 import it.gov.pagopa.self.expense.model.ExpenseData;
 import it.gov.pagopa.self.expense.model.OnboardingFamilies;
+import it.gov.pagopa.self.expense.model.SelfDeclarationText;
 import it.gov.pagopa.self.expense.model.mapper.ExpenseDataMapper;
 import it.gov.pagopa.self.expense.repository.AnprInfoRepository;
 import it.gov.pagopa.self.expense.repository.ExpenseDataRepository;
 import it.gov.pagopa.self.expense.repository.OnboardingFamiliesRepository;
+import it.gov.pagopa.self.expense.repository.SelfDeclarationTextRepository;
+import it.gov.pagopa.self.expense.utils.Utils;
+import it.gov.pagopa.self.expense.utils.excel.ExcelPOIHelper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
@@ -21,12 +29,15 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Slf4j
 @Service
@@ -40,7 +51,10 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
     private final RtdProducer rtdProducer;
     private final FileStorageAsyncConnector fileStorageConnector;
     private final OnboardingFamiliesRepository onboardingFamiliesRepository;
-    public SelfExpenseServiceImpl(AnprInfoRepository anprInfoRepository, ExceptionMap exceptionMap, ExpenseDataRepository expenseDataRepository, CacheService cacheService, UserFiscalCodeService userFiscalCodeService, RtdProducer rtdProducer, FileStorageAsyncConnector fileStorageConnector, OnboardingFamiliesRepository onboardingFamiliesRepository) {
+    private final SelfDeclarationTextRepository selfDeclarationTextRepository;
+
+
+    public SelfExpenseServiceImpl(AnprInfoRepository anprInfoRepository, ExceptionMap exceptionMap, ExpenseDataRepository expenseDataRepository, CacheService cacheService, UserFiscalCodeService userFiscalCodeService, RtdProducer rtdProducer, FileStorageAsyncConnector fileStorageConnector, OnboardingFamiliesRepository onboardingFamiliesRepository,SelfDeclarationTextRepository selfDeclarationTextRepository) {
         this.anprInfoRepository = anprInfoRepository;
         this.expenseDataRepository = expenseDataRepository;
         this.exceptionMap = exceptionMap;
@@ -49,6 +63,7 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
         this.rtdProducer = rtdProducer;
         this.fileStorageConnector = fileStorageConnector;
         this.onboardingFamiliesRepository = onboardingFamiliesRepository;
+        this.selfDeclarationTextRepository = selfDeclarationTextRepository;
     }
 
     @Override
@@ -90,15 +105,146 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
     }
 
     @Override
-    public Mono<ResponseEntity<byte[]>> generateReportExcel(String initiativeId) {
+    public Mono<ResponseEntity<byte[]>> generateReportExcel(String initiativeId)  {
 
-        //Find Onboarding Family by id
-        Flux<OnboardingFamilies> families = onboardingFamiliesRepository.findByInitiativeId(initiativeId);
-        // Log each element in families
-        families.doOnNext(family -> log.info("Family: {}", family))
-                .subscribe();
+        List<ReportExcelDTO> dataForReport = extractDataForReport(initiativeId);
 
-        return null;
+        if( !dataForReport.isEmpty()){
+            ExcelPOIHelper excelHelper = new ExcelPOIHelper();
+            try {
+                byte[] excelBytes = excelHelper.genExcel(ReportExcelDTO.headerName, Utils.generateRowValuesForReport(dataForReport));
+                return Mono.just(ResponseEntity.ok()
+                        .header("Content-Disposition", "attachment; filename=ReportCentriEstivi.xlsx")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
+                        .body(excelBytes));
+            } catch (IOException e) {
+                log.error("Exception in generateReportExcel", e);
+                return Mono.just(ResponseEntity.internalServerError().build());
+            }
+
+        }else{
+            return Mono.just(ResponseEntity.notFound().build());
+        }
+
+    }
+
+    @Override
+    public Mono<ResponseEntity<byte[]>> downloadExpenseFile(String initiativeId) {
+
+        Map<String, String> fileNameMap = extractFileNameList(initiativeId);
+        return Flux.fromIterable(fileNameMap.entrySet())
+                .flatMap(entry -> {
+                    String originalFileName = entry.getKey();
+                    String newFileName = entry.getValue();
+
+                    return fileStorageConnector.downloadFile(originalFileName)
+                            .collectList()
+                            .flatMap(byteBuffers -> {
+                                // Unisci i ByteBuffer in un array di byte
+                                byte[] fileData = ByteBuffer.allocate(byteBuffers.stream().mapToInt(ByteBuffer::remaining).sum())
+                                        .put(byteBuffers.stream().reduce(ByteBuffer::put).orElse(ByteBuffer.allocate(0)))
+                                        .array();
+
+                                // Crea un ZipEntry per il file
+                                return Mono.just(Map.entry(new ZipEntry(newFileName), fileData));
+                            });
+                })
+                .collectList()
+                .flatMap(zipEntriesAndData -> {
+                    try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                         ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)) {
+
+                        for (var entry : zipEntriesAndData) {
+                            ZipEntry zipEntry = entry.getKey();
+                            byte[] data = entry.getValue();
+
+                            zipOutputStream.putNextEntry(zipEntry);
+                            zipOutputStream.write(data);
+                            zipOutputStream.closeEntry();
+                        }
+
+                        zipOutputStream.finish();
+                        byte[] zipBytes = byteArrayOutputStream.toByteArray();
+
+                        return Mono.just(ResponseEntity.ok()
+                                .header("Content-Disposition", "attachment; filename=expenseFiles.zip")
+                                .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
+                                .body(zipBytes));
+                    } catch (IOException e) {
+                        return Mono.error(new RuntimeException("Error creating ZIP file", e));
+                    }
+                });
+
+    }
+
+    private Map<String, String> extractFileNameList(String initiativeId) {
+        // Fetch all expense data for the initiative
+        List<ReportExcelDTO> data = extractDataForReport(initiativeId);
+
+        List<ExpenseData> expenseDataList = new ArrayList<>();
+
+        Map<String, String> expenseFileMap = new HashMap<>();// <[storedFilePath], [fileName With Other info]>
+        for (ReportExcelDTO reportExcelDTO : data){
+            expenseDataList.addAll(reportExcelDTO.getExpenseDataList());
+        }
+
+        for (ExpenseData expenseData : expenseDataList) {
+            String cf = userFiscalCodeService.getUserFiscalCode(expenseData.getUserId()).block();
+
+            for (String filename : expenseData.getFilesName()) {
+                String storedPath = String.format("%s/%s", expenseData.getUserId(), filename);
+                String downloadName = String.format("%s_%s_%s_%s", cf, expenseData.getName(),
+                        expenseData.getSurname(), filename);
+                expenseFileMap.put(storedPath, downloadName);
+            }
+        }
+        return expenseFileMap;
+    }
+
+    private List<ReportExcelDTO> extractDataForReport(String initiativeId){
+
+        Flux<OnboardingFamilies> families = onboardingFamiliesRepository.findByInitiativeId(initiativeId)
+                .filter(family -> OnboardingFamilyEvaluationStatus.ONBOARDING_OK.equals(family.getStatus()));
+
+        List<OnboardingFamilies> familyList = families.collectList().block();
+
+        List<ReportExcelDTO> excelReportDTOList = new ArrayList<>();
+        ReportExcelDTO excelReportDTO = null;
+        if(familyList!=null)
+            for(OnboardingFamilies family : familyList) {
+                excelReportDTO = new ReportExcelDTO();
+
+                excelReportDTO.set_2_CF_compNucleo(getUserFiscalCodeFromListId(family.getMemberIds()));
+
+                Mono<AnprInfo> anprInfoMono = anprInfoRepository.findByFamilyId(family.getFamilyId());
+
+                AnprInfo anprInfo = anprInfoMono.block();
+                excelReportDTO.set_0_cfGenTutore(userFiscalCodeService.getUserFiscalCode(anprInfo.getUserId()).block());//
+                excelReportDTO.set_4_N_figliMinori(String.valueOf(anprInfo.getChildList().size()));
+                excelReportDTO.set_3_N_minoriNucleo(String.valueOf(anprInfo.getUnderAgeNumber()));
+
+                Mono<SelfDeclarationText> selfDeclarationMono = selfDeclarationTextRepository.findById(SelfDeclarationText.buildId(family.getInitiativeId(), anprInfo.getUserId()));
+
+                SelfDeclarationText selfDeclaration = selfDeclarationMono.block();
+                excelReportDTO.set_1_dichiarazioni(selfDeclaration!=null? Utils.formatDeclaration(selfDeclaration.getSelfDeclarationTextValues()):"");
+
+
+                Flux<ExpenseData> expenseData = expenseDataRepository.findByUserId(anprInfo.getUserId());
+                List<ExpenseData> expenseDataList = expenseData.collectList().block(); // Colleziona i dati in una lista
+
+                excelReportDTO.setExpenseDataList(expenseDataList);
+
+                excelReportDTOList.add(excelReportDTO);
+            }
+        return excelReportDTOList;
+    }
+
+    private String getUserFiscalCodeFromListId(Set<String> ids){
+
+        return ids.stream()
+                .map(userFiscalCodeService::getUserFiscalCode)
+                .map(Mono::block)
+                .collect(Collectors.joining("\n"));
     }
 
     private Mono<List<FilePart>> validateFiles(List<FilePart> fileList) {

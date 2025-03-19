@@ -2,7 +2,6 @@ package it.gov.pagopa.self.expense.dto;
 
 import it.gov.pagopa.self.expense.model.ExpenseData;
 import lombok.Data;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,7 +18,7 @@ public class ReportExcelDTO {
             "N.  minori nel nucleo",
             "N. figli minori",
             "Residenza",
-            "Importo Richiesto",
+            "Importo Richiesto €",
             "Dettaglio Spese",
             "Nome File Doc di spese"
     );
@@ -45,16 +44,16 @@ public class ReportExcelDTO {
                 """;
         final String fileNameTemplate = "%s_%s";
         String fileNameAsList = "";
-        List<String> singleRowValues = new ArrayList<>(headerName.size());
+        List<String> singleRowValues = null;
         for(ExpenseData expenseData : expenseDataList) {
-
+            singleRowValues = new ArrayList<>(headerName.size());
             singleRowValues.add(_0_cfGenTutore);
             singleRowValues.add(_1_dichiarazioni);
             singleRowValues.add(_2_CF_compNucleo);
             singleRowValues.add(_3_N_minoriNucleo);
             singleRowValues.add(_4_N_figliMinori);
             singleRowValues.add(_5_residenza);
-            singleRowValues.add((expenseData.getAmountCents()==null?null:Long.toString(expenseData.getAmountCents()/100L)));
+            singleRowValues.add((expenseData.getAmountCents()==null?null:Double.toString(expenseData.getAmountCents()/100.00)));
             singleRowValues.add(String.format(expenseDetail,
                             expenseData.getName(), expenseData.getSurname(), expenseData.getExpenseDate(), expenseData.getCompanyName(),
                             expenseData.getDescription(), expenseData.getEntityId()
@@ -64,7 +63,7 @@ public class ReportExcelDTO {
                     .map(s -> String.format(fileNameTemplate, _0_cfGenTutore, s))
                     .collect(Collectors.joining("\n"));
 
-            singleRowValues.add(fileNameAsList);
+            singleRowValues.add(fileNameAsList.trim());
             result.add(singleRowValues);
 
         }

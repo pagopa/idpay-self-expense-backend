@@ -1,22 +1,12 @@
 package it.gov.pagopa.self.expense.utils.excel;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.DateUtil;
-import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.IndexedColors;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -68,25 +58,20 @@ public class ExcelPOIHelper {
         return data;
     }
 
-    public void writeExcel(List<String> headerColumns, List<List<String>> rowValues) throws IOException {
-        Workbook workbook = new XSSFWorkbook();
+    public byte[] genExcel(List<String> headerColumns, List<List<String>> rowValues) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 
-        try {
-            Sheet sheet = workbook.createSheet();
-            sheet.setColumnWidth(0, 6000);
-            sheet.setColumnWidth(1, 4000);
-
-
+            Sheet sheet = workbook.createSheet("Export");
 
             Row header = sheet.createRow(0);
 
             CellStyle headerStyle = workbook.createCellStyle();
 
-            //headerStyle.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());
-            //headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
             XSSFFont font = ((XSSFWorkbook) workbook).createFont();
-            //font.setFontName("Arial");
             font.setFontHeightInPoints((short) 12);
             font.setBold(true);
             headerStyle.setFont(font);
@@ -97,6 +82,8 @@ public class ExcelPOIHelper {
                 headerCell = header.createCell(i);
                 headerCell.setCellValue(headername);
                 headerCell.setCellStyle(headerStyle);
+                sheet.setColumnWidth(i, 6000);
+
                 i++;
             }
 
@@ -112,29 +99,37 @@ public class ExcelPOIHelper {
                 int j=0;
                 for(String rowValue : rowValueList) {
                     Cell cell = row.createCell(j);
-                    cell.setCellValue(rowValue);
+                    //check number cell
+                    if (j == 3 || j == 4) {
+                        cell.setCellValue(Integer.parseInt(rowValue));
+                    } else if(j==6){
+                        cell.setCellValue(Double.parseDouble(rowValue));
+
+                    }else{
+                        cell.setCellValue(rowValue);
+
+                    }
                     cell.setCellStyle(style);
-
                     j++;
-                    //cell = row.createCell(1);
-                    //cell.setCellValue(20);
-                    //cell.setCellStyle(style);
                 }
-
                 r++;
             }
-            File currDir = new File(".");
-            String path = "C:\\IdPay\\tmp\\";//currDir.getAbsolutePath();
-            String fileLocation = path + "temp.xlsx";
 
-            FileOutputStream outputStream = new FileOutputStream(fileLocation);
             workbook.write(outputStream);
-        } finally {
-            if (workbook != null) {
-               
-                    workbook.close();
-               
-            }
+
+            return outputStream.toByteArray();
+        }
+    }
+
+    public void writeExcel(List<String> headerColumns, List<List<String>> rowValues, String filePath) throws IOException {
+
+        byte[] binaryReport = genExcel(headerColumns, rowValues);
+
+        // Specifica il percorso del file
+        //String filePath = "C:\\IdPay\\tmp\\report.xlsx";
+
+        try (FileOutputStream fileOut = new FileOutputStream(filePath)) {
+            fileOut.write(binaryReport);
         }
     }
 

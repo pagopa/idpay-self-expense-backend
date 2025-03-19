@@ -15,4 +15,6 @@ public interface SelfExpenseService {
     Mono<Void> saveExpenseData(List<FilePart> files, ExpenseDataDTO expenseData);
 
     Mono<ResponseEntity<byte[]>> generateReportExcel(String initiativeId);
+
+    Mono<ResponseEntity<byte[]>> downloadExpenseFile(String initiativeId);
 }
