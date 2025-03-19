@@ -246,12 +246,6 @@
 			<groupId>com.azure</groupId>
 			<artifactId>azure-storage-blob</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>it.gov.pagopa</groupId>
-			<artifactId>idpay-self-expense-backend</artifactId>
-			<version>1.0.0</version>
-			<scope>test</scope>
-		</dependency>
 
 	</dependencies>
 	<dependencyManagement>
