@@ -13,6 +13,8 @@ import it.gov.pagopa.self.expense.model.ExpenseData;
 import it.gov.pagopa.self.expense.model.mapper.ExpenseDataMapper;
 import it.gov.pagopa.self.expense.repository.AnprInfoRepository;
 import it.gov.pagopa.self.expense.repository.ExpenseDataRepository;
+import it.gov.pagopa.self.expense.repository.OnboardingFamiliesRepository;
+import it.gov.pagopa.self.expense.repository.SelfDeclarationTextRepository;
 import it.gov.pagopa.self.expense.utils.MockFilePart;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -53,6 +55,8 @@ class SelfExpenseServiceImplTest {
     @MockBean
     private UserFiscalCodeService userFiscalCodeService;
 
+    @MockBean
+    private OnboardingFamiliesRepository onboardingFamiliesRepository;
 
     @MockBean
     private RtdProducer rtdProducer;
@@ -61,6 +65,9 @@ class SelfExpenseServiceImplTest {
     private CacheService cacheService;
     @MockBean
     private FileStorageAsyncConnector fileStorageAsyncConnector;
+
+    @MockBean
+    private SelfDeclarationTextRepository selfDeclarationTextRepository;
 
     @Autowired
     private ExceptionMap exceptionMap;
