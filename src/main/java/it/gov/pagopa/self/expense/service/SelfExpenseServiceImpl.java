@@ -218,15 +218,13 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
 
 
                     return anprInfoRepository.findByFamilyId(family.getFamilyId())
-                            .flatMap(anprInfo -> {
-                                return getUserFiscalCodeFromListId(family.getMemberIds())
-                                        .flatMap(cfListString -> {
-                                            excelReportDTO.set_2_CF_compNucleo(cfListString);
-                                            return userFiscalCodeService.getUserFiscalCode(anprInfo.getUserId())
-                                                    .doOnNext(excelReportDTO::set_0_cfGenTutore)
-                                                    .then(Mono.just(anprInfo));
-                                        });
-                            })
+                            .flatMap(anprInfo -> getUserFiscalCodeFromListId(family.getMemberIds())
+                                    .flatMap(cfListString -> {
+                                        excelReportDTO.set_2_CF_compNucleo(cfListString);
+                                        return userFiscalCodeService.getUserFiscalCode(anprInfo.getUserId())
+                                                .doOnNext(excelReportDTO::set_0_cfGenTutore)
+                                                .then(Mono.just(anprInfo));
+                                    }))
                             .flatMap(anprInfo -> {
                                 excelReportDTO.set_4_N_figliMinori(String.valueOf(anprInfo.getChildList().size()));
                                 excelReportDTO.set_3_N_minoriNucleo(String.valueOf(anprInfo.getUnderAgeNumber()));

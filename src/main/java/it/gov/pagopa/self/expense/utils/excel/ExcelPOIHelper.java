@@ -79,7 +79,6 @@ public class ExcelPOIHelper {
         byte[] binaryReport = genExcel(headerColumns, rowValues);
 
         // Specifica il percorso del file
-        //String filePath = "C:\\IdPay\\tmp\\report.xlsx";
 
         try (FileOutputStream fileOut = new FileOutputStream(filePath)) {
             fileOut.write(binaryReport);

@@ -2,7 +2,6 @@ package it.gov.pagopa.self.expense.repository;
 
 import it.gov.pagopa.self.expense.model.ExpenseData;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import reactor.core.publisher.Flux;
 
