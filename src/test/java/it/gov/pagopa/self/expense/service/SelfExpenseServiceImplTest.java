@@ -6,10 +6,10 @@ import it.gov.pagopa.self.expense.connector.FileStorageAsyncConnector;
 import it.gov.pagopa.self.expense.constants.Constants;
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
+import it.gov.pagopa.self.expense.dto.ReportExcelDTO;
+import it.gov.pagopa.self.expense.enums.OnboardingFamilyEvaluationStatus;
 import it.gov.pagopa.self.expense.event.producer.RtdProducer;
-import it.gov.pagopa.self.expense.model.AnprInfo;
-import it.gov.pagopa.self.expense.model.Child;
-import it.gov.pagopa.self.expense.model.ExpenseData;
+import it.gov.pagopa.self.expense.model.*;
 import it.gov.pagopa.self.expense.model.mapper.ExpenseDataMapper;
 import it.gov.pagopa.self.expense.repository.AnprInfoRepository;
 import it.gov.pagopa.self.expense.repository.ExpenseDataRepository;
@@ -21,14 +21,18 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 
@@ -42,6 +46,8 @@ class SelfExpenseServiceImplTest {
     private static final String FAMILY_ID = "familyId";
     private static final String CHILD_NAME = "nome";
     private static final String CHILD_SURNAME = "cognome";
+    private static final String CHILD_NAME_2 = "nome2";
+    private static final String CHILD_SURNAME_2 = "cognome2";
 
     @Autowired
     private SelfExpenseServiceImpl selfExpenseService;
@@ -118,6 +124,7 @@ class SelfExpenseServiceImplTest {
         anprInfo.setInitiativeId(INITIATIVE_ID);
         anprInfo.setFamilyId(FAMILY_ID);
         anprInfo.setChildList(List.of(child));
+        anprInfo.setUnderAgeNumber(2);
 
         return anprInfo;
     }
@@ -232,6 +239,138 @@ class SelfExpenseServiceImplTest {
         Mockito.verifyNoInteractions(rtdProducer);
     }
 
+    @Test
+    void testExtractDataForReport() {
+
+        mockRepositoryForReport();
+
+        // Act
+        List<ReportExcelDTO> result = selfExpenseService.extractDataForReport(INITIATIVE_ID);
+
+
+        assertEquals(1, result.size());
+        ReportExcelDTO report = result.get(0);
+
+        assertEquals(2, report.getExpenseDataList().size());
+        assertEquals("CF", report.get_0_cfGenTutore());
+
+    }
+
+    void mockRepositoryForReport(){
+        OnboardingFamilies family = new OnboardingFamilies();
+        family.setFamilyId(FAMILY_ID);
+        family.setMemberIds(Set.of(USER_ID));
+        family.setStatus(OnboardingFamilyEvaluationStatus.ONBOARDING_OK);
+
+        AnprInfo anprInfo = buildAnprInfo();
+        SelfDeclarationText selfDeclarationText = new SelfDeclarationText();
+        List<SelfDeclarationTextValues> selfDecList = new ArrayList<>();
+        SelfDeclarationTextValues selfDecValues1 = new SelfDeclarationTextValues();
+        SelfDeclarationTextValues selfDecValues2 = new SelfDeclarationTextValues();
+        SelfDeclarationTextValues selfDecValues3 = new SelfDeclarationTextValues();
+        selfDecValues1.setValue("Value1");
+        selfDecValues2.setValue("Value2");
+        selfDecValues3.setValue("Value3");
+
+
+        selfDecList.add(selfDecValues1);
+        selfDecList.add(selfDecValues2);
+        selfDecList.add(selfDecValues3);
+        selfDeclarationText.setSelfDeclarationTextValues(selfDecList);
+
+        Mockito.when(userFiscalCodeService.getUserFiscalCode(anyString())).thenReturn(Mono.just("CF"));
+
+        ExpenseData expenseData1 = ExpenseData.builder()
+                .name(CHILD_NAME)
+                .surname(CHILD_SURNAME)
+                .amountCents(123456L)
+                .expenseDate(LocalDateTime.now())
+                .companyName("Centro A")
+                .entityId("ABC123")
+                .userId(USER_ID)
+                .description("Expense description")
+                .filesName(Arrays.asList("file1.pdf", "file2.pdf"))
+                .build();
+
+        ExpenseData expenseData2 = ExpenseData.builder()
+                .name(CHILD_NAME_2)
+                .surname(CHILD_SURNAME_2)
+                .amountCents(123456L)
+                .expenseDate(LocalDateTime.now())
+                .companyName("Centro A")
+                .entityId("ABC123")
+                .userId(USER_ID)
+                .description("Expense description")
+                .filesName(Arrays.asList("file3.pdf", "file4.pdf"))
+                .build();
+
+
+
+        Mockito.when(onboardingFamiliesRepository.findByInitiativeId(INITIATIVE_ID))
+                .thenReturn(Flux.just(family));
+
+        Mockito.when(anprInfoRepository.findByFamilyId(FAMILY_ID))
+                .thenReturn(Mono.just(anprInfo));
+
+        Mockito.when(selfDeclarationTextRepository.findById(anyString()))
+                .thenReturn(Mono.just(selfDeclarationText));
+
+        Mockito.when(expenseDataRepository.findByUserId(USER_ID))
+                .thenReturn(Flux.just(expenseData1, expenseData2));
+    }
+
+    @Test
+    void extractFileNameListTest(){
+
+        mockRepositoryForReport();
+
+        Mono<Map<String,String>> fileNameList = selfExpenseService.extractFileNameList(INITIATIVE_ID);
+
+        StepVerifier.create(fileNameList)
+                .expectNextMatches(fileNameListE -> {
+                    return fileNameListE.size() == 4;
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void generateReportExcelTest(){
+
+        mockRepositoryForReport();
+
+        Mono<ResponseEntity<byte[]>> reportByteMono = selfExpenseService.generateReportExcel(INITIATIVE_ID);
+
+        StepVerifier.create(reportByteMono)
+                .expectNextMatches(responseEntity -> {
+                    return responseEntity.getStatusCode().value()==200;
+                    //responseEntity. contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM);
+                })
+                .verifyComplete();
+
+    }
+
+    @Test
+    void downloadExpenseFileTest(){
+
+        mockRepositoryForReport();
+
+
+        Flux<ByteBuffer> expectedResult = Flux.just(ByteBuffer.wrap(new byte[0]));
+
+        Mockito.doReturn(expectedResult)
+                .when(fileStorageAsyncConnector)
+                .downloadFile(anyString());
+
+        Mono<ResponseEntity<byte[]>> downloadFileMono = selfExpenseService.downloadExpenseFile(INITIATIVE_ID);
+
+        StepVerifier.create(downloadFileMono)
+                .expectNextMatches(responseEntity -> {
+                    return responseEntity.getStatusCode().value()==200;
+                })
+                .verifyComplete();
+
+    }
+
 
     private static ExpenseDataDTO buildExpenseDataDTO() {
 
@@ -248,6 +387,7 @@ class SelfExpenseServiceImplTest {
                 .build();
 
     }
+
 
 
 

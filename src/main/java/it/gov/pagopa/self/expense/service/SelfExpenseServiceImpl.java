@@ -9,9 +9,7 @@ import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
 import it.gov.pagopa.self.expense.dto.ReportExcelDTO;
 import it.gov.pagopa.self.expense.enums.OnboardingFamilyEvaluationStatus;
 import it.gov.pagopa.self.expense.event.producer.RtdProducer;
-import it.gov.pagopa.self.expense.model.AnprInfo;
 import it.gov.pagopa.self.expense.model.ExpenseData;
-import it.gov.pagopa.self.expense.model.OnboardingFamilies;
 import it.gov.pagopa.self.expense.model.SelfDeclarationText;
 import it.gov.pagopa.self.expense.model.mapper.ExpenseDataMapper;
 import it.gov.pagopa.self.expense.repository.AnprInfoRepository;
@@ -21,7 +19,6 @@ import it.gov.pagopa.self.expense.repository.SelfDeclarationTextRepository;
 import it.gov.pagopa.self.expense.utils.Utils;
 import it.gov.pagopa.self.expense.utils.excel.ExcelPOIHelper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
@@ -33,7 +30,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
@@ -131,8 +127,9 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
     @Override
     public Mono<ResponseEntity<byte[]>> downloadExpenseFile(String initiativeId) {
 
-        Map<String, String> fileNameMap = extractFileNameList(initiativeId);
-        return Flux.fromIterable(fileNameMap.entrySet())
+        Mono<Map<String, String>> fileNameMap = extractFileNameList(initiativeId);
+        return fileNameMap
+                .flatMapIterable(Map::entrySet)
                 .flatMap(entry -> {
                     String originalFileName = entry.getKey();
                     String newFileName = entry.getValue();
@@ -177,74 +174,87 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
 
     }
 
-    private Map<String, String> extractFileNameList(String initiativeId) {
+
+
+    public Mono<Map<String, String>> extractFileNameList(String initiativeId) {
         // Fetch all expense data for the initiative
         List<ReportExcelDTO> data = extractDataForReport(initiativeId);
 
         List<ExpenseData> expenseDataList = new ArrayList<>();
 
-        Map<String, String> expenseFileMap = new HashMap<>();// <[storedFilePath], [fileName With Other info]>
-        for (ReportExcelDTO reportExcelDTO : data){
+        Map<String, String> expenseFileMap = new HashMap<>(); // <[storedFilePath], [fileName With Other info]>
+
+        for (ReportExcelDTO reportExcelDTO : data) {
             expenseDataList.addAll(reportExcelDTO.getExpenseDataList());
         }
 
-        for (ExpenseData expenseData : expenseDataList) {
-            String cf = userFiscalCodeService.getUserFiscalCode(expenseData.getUserId()).block();
-
-            for (String filename : expenseData.getFilesName()) {
-                String storedPath = String.format("%s/%s", expenseData.getUserId(), filename);
-                String downloadName = String.format("%s_%s_%s_%s", cf, expenseData.getName(),
-                        expenseData.getSurname(), filename);
-                expenseFileMap.put(storedPath, downloadName);
-            }
-        }
-        return expenseFileMap;
+        // Create a Flux from the expenseDataList to process each ExpenseData
+        return Flux.fromIterable(expenseDataList)
+                .flatMap(expenseData ->
+                        userFiscalCodeService.getUserFiscalCode(expenseData.getUserId())
+                                .map(cf -> {
+                                    for (String filename : expenseData.getFilesName()) {
+                                        String storedPath = String.format("%s/%s", expenseData.getUserId(), filename);
+                                        String downloadName = String.format("%s_%s_%s_%s", cf, expenseData.getName(),
+                                                expenseData.getSurname(), filename);
+                                        expenseFileMap.put(storedPath, downloadName);
+                                    }
+                                    return expenseFileMap;
+                                })
+                )
+                .collectList()
+                .map(list -> expenseFileMap); // Return the final map
     }
 
-    private List<ReportExcelDTO> extractDataForReport(String initiativeId){
-
-        Flux<OnboardingFamilies> families = onboardingFamiliesRepository.findByInitiativeId(initiativeId)
-                .filter(family -> OnboardingFamilyEvaluationStatus.ONBOARDING_OK.equals(family.getStatus()));
-
-        List<OnboardingFamilies> familyList = families.collectList().block();
-
+    public List<ReportExcelDTO> extractDataForReport(String initiativeId) {
         List<ReportExcelDTO> excelReportDTOList = new ArrayList<>();
-        ReportExcelDTO excelReportDTO = null;
-        if(familyList!=null)
-            for(OnboardingFamilies family : familyList) {
-                excelReportDTO = new ReportExcelDTO();
 
-                excelReportDTO.set_2_CF_compNucleo(getUserFiscalCodeFromListId(family.getMemberIds()));
-
-                Mono<AnprInfo> anprInfoMono = anprInfoRepository.findByFamilyId(family.getFamilyId());
-
-                AnprInfo anprInfo = anprInfoMono.block();
-                excelReportDTO.set_0_cfGenTutore(userFiscalCodeService.getUserFiscalCode(anprInfo.getUserId()).block());//
-                excelReportDTO.set_4_N_figliMinori(String.valueOf(anprInfo.getChildList().size()));
-                excelReportDTO.set_3_N_minoriNucleo(String.valueOf(anprInfo.getUnderAgeNumber()));
-
-                Mono<SelfDeclarationText> selfDeclarationMono = selfDeclarationTextRepository.findById(SelfDeclarationText.buildId(family.getInitiativeId(), anprInfo.getUserId()));
-
-                SelfDeclarationText selfDeclaration = selfDeclarationMono.block();
-                excelReportDTO.set_1_dichiarazioni(selfDeclaration!=null? Utils.formatDeclaration(selfDeclaration.getSelfDeclarationTextValues()):"");
+        onboardingFamiliesRepository.findByInitiativeId(initiativeId)
+                .filter(family -> OnboardingFamilyEvaluationStatus.ONBOARDING_OK.equals(family.getStatus()))
+                .collectList()
+                .flatMapMany(Flux::fromIterable)
+                .flatMap(family -> {
+                    ReportExcelDTO excelReportDTO = new ReportExcelDTO();
 
 
-                Flux<ExpenseData> expenseData = expenseDataRepository.findByUserId(anprInfo.getUserId());
-                List<ExpenseData> expenseDataList = expenseData.collectList().block(); // Colleziona i dati in una lista
+                    return anprInfoRepository.findByFamilyId(family.getFamilyId())
+                            .flatMap(anprInfo -> {
+                                return getUserFiscalCodeFromListId(family.getMemberIds())
+                                        .flatMap(cfListString -> {
+                                            excelReportDTO.set_2_CF_compNucleo(cfListString);
+                                            return userFiscalCodeService.getUserFiscalCode(anprInfo.getUserId())
+                                                    .doOnNext(excelReportDTO::set_0_cfGenTutore)
+                                                    .then(Mono.just(anprInfo));
+                                        });
+                            })
+                            .flatMap(anprInfo -> {
+                                excelReportDTO.set_4_N_figliMinori(String.valueOf(anprInfo.getChildList().size()));
+                                excelReportDTO.set_3_N_minoriNucleo(String.valueOf(anprInfo.getUnderAgeNumber()));
 
-                excelReportDTO.setExpenseDataList(expenseDataList);
+                                return selfDeclarationTextRepository.findById(SelfDeclarationText.buildId(family.getInitiativeId(), anprInfo.getUserId()))
+                                        .flatMap(selfDeclaration -> {
+                                            excelReportDTO.set_1_dichiarazioni(selfDeclaration != null ? Utils.formatDeclaration(selfDeclaration.getSelfDeclarationTextValues()) : "");
+                                            return expenseDataRepository.findByUserId(anprInfo.getUserId()).collectList();
+                                        })
+                                        .map(expenseDataList -> {
+                                            excelReportDTO.setExpenseDataList(expenseDataList);
+                                            return excelReportDTO;
+                                        });
+                            });
+                })
+                .doOnNext(excelReportDTOList::add)
+                .blockLast();
 
-                excelReportDTOList.add(excelReportDTO);
-            }
         return excelReportDTOList;
     }
 
-    private String getUserFiscalCodeFromListId(Set<String> ids){
 
-        return ids.stream()
-                .map(userFiscalCodeService::getUserFiscalCode)
-                .map(Mono::block)
-                .collect(Collectors.joining("\n"));
+
+    private Mono<String> getUserFiscalCodeFromListId(Set<String> ids) {
+        return Flux.fromIterable(ids)
+                .flatMap(userFiscalCodeService::getUserFiscalCode)
+                .collectList()
+                .map(fiscalCodes -> String.join("\n", fiscalCodes));
     }
 
     private Mono<List<FilePart>> validateFiles(List<FilePart> fileList) {
