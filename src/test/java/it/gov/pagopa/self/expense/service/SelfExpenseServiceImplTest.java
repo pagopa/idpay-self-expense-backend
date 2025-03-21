@@ -343,7 +343,6 @@ class SelfExpenseServiceImplTest {
         StepVerifier.create(reportByteMono)
                 .expectNextMatches(responseEntity -> {
                     return responseEntity.getStatusCode().value()==200;
-                    //responseEntity. contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM);
                 })
                 .verifyComplete();
 
