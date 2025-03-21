@@ -245,9 +245,10 @@ class SelfExpenseServiceImplTest {
         mockRepositoryForReport();
 
         // Act
-        List<ReportExcelDTO> result = selfExpenseService.extractDataForReport(INITIATIVE_ID);
+        List<ReportExcelDTO> result = selfExpenseService.extractDataForReport(INITIATIVE_ID).block();
 
 
+        assert result != null;
         assertEquals(1, result.size());
         ReportExcelDTO report = result.get(0);
 
@@ -327,9 +328,7 @@ class SelfExpenseServiceImplTest {
         Mono<Map<String,String>> fileNameList = selfExpenseService.extractFileNameList(INITIATIVE_ID);
 
         StepVerifier.create(fileNameList)
-                .expectNextMatches(fileNameListE -> {
-                    return fileNameListE.size() == 4;
-                })
+                .expectNextMatches(fileNameListE -> fileNameListE.size() == 4)
                 .verifyComplete();
     }
 
@@ -364,9 +363,7 @@ class SelfExpenseServiceImplTest {
         Mono<ResponseEntity<byte[]>> downloadFileMono = selfExpenseService.downloadExpenseFile(INITIATIVE_ID);
 
         StepVerifier.create(downloadFileMono)
-                .expectNextMatches(responseEntity -> {
-                    return responseEntity.getStatusCode().value()==200;
-                })
+                .expectNextMatches(responseEntity -> responseEntity.getStatusCode().value()==200)
                 .verifyComplete();
 
     }
