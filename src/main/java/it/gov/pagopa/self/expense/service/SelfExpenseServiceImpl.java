@@ -103,25 +103,24 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
     @Override
     public Mono<ResponseEntity<byte[]>> generateReportExcel(String initiativeId)  {
 
-        List<ReportExcelDTO> dataForReport = extractDataForReport(initiativeId);
-
-        if( !dataForReport.isEmpty()){
-            ExcelPOIHelper excelHelper = new ExcelPOIHelper();
-            try {
-                byte[] excelBytes = excelHelper.genExcel(ReportExcelDTO.headerName, Utils.generateRowValuesForReport(dataForReport));
-                return Mono.just(ResponseEntity.ok()
-                        .header("Content-Disposition", "attachment; filename=ReportCentriEstivi.xlsx")
-                        .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
-                        .body(excelBytes));
-            } catch (IOException e) {
-                log.error("Exception in generateReportExcel", e);
-                return Mono.just(ResponseEntity.internalServerError().build());
-            }
-
-        }else{
-            return Mono.just(ResponseEntity.notFound().build());
-        }
-
+        return extractDataForReport(initiativeId)
+                .flatMap(dataForReport -> {
+                    if (!dataForReport.isEmpty()) {
+                        ExcelPOIHelper excelHelper = new ExcelPOIHelper();
+                        try {
+                            byte[] excelBytes = excelHelper.genExcel(ReportExcelDTO.headerName, Utils.generateRowValuesForReport(dataForReport));
+                            return Mono.just(ResponseEntity.ok()
+                                    .header("Content-Disposition", "attachment; filename=ReportCentriEstivi.xlsx")
+                                    .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
+                                    .body(excelBytes));
+                        } catch (IOException e) {
+                            log.error("Exception in generateReportExcel", e);
+                            return Mono.just(ResponseEntity.internalServerError().build());
+                        }
+                    } else {
+                        return Mono.just(ResponseEntity.notFound().build());
+                    }
+                });
     }
 
     @Override
@@ -178,38 +177,38 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
 
     public Mono<Map<String, String>> extractFileNameList(String initiativeId) {
         // Fetch all expense data for the initiative
-        List<ReportExcelDTO> data = extractDataForReport(initiativeId);
 
-        List<ExpenseData> expenseDataList = new ArrayList<>();
 
         Map<String, String> expenseFileMap = new HashMap<>(); // <[storedFilePath], [fileName With Other info]>
 
-        for (ReportExcelDTO reportExcelDTO : data) {
-            expenseDataList.addAll(reportExcelDTO.getExpenseDataList());
-        }
 
-        // Create a Flux from the expenseDataList to process each ExpenseData
-        return Flux.fromIterable(expenseDataList)
-                .flatMap(expenseData ->
-                        userFiscalCodeService.getUserFiscalCode(expenseData.getUserId())
-                                .map(cf -> {
-                                    for (String filename : expenseData.getFilesName()) {
-                                        String storedPath = String.format("%s/%s", expenseData.getUserId(), filename);
-                                        String downloadName = String.format("%s_%s_%s_%s", cf, expenseData.getName(),
-                                                expenseData.getSurname(), filename);
-                                        expenseFileMap.put(storedPath, downloadName);
-                                    }
-                                    return expenseFileMap;
-                                })
-                )
-                .collectList()
-                .map(list -> expenseFileMap); // Return the final map
+        return extractDataForReport(initiativeId)
+                .flatMap(reportExcelDTOList ->
+                     Flux.fromIterable(reportExcelDTOList)
+                            .flatMap(reportExcelDTO -> {
+                                List<ExpenseData> expenseDataList = reportExcelDTO.getExpenseDataList();
+                                return  Flux.fromIterable(expenseDataList)
+                                                .flatMap(expenseData ->
+                                                        userFiscalCodeService.getUserFiscalCode(expenseData.getUserId())
+                                                            .map(cf -> {
+                                                                for (String filename : expenseData.getFilesName()) {
+                                                                    String storedPath = String.format("%s/%s", expenseData.getUserId(), filename);
+                                                                    String downloadName = String.format("%s_%s_%s_%s", cf, expenseData.getName(),
+                                                                            expenseData.getSurname(), filename);
+                                                                    expenseFileMap.put(storedPath, downloadName);
+                                                                }
+                                                                return expenseFileMap;
+                                                            })
+                                                );
+                            })
+                            .collectList()
+                            .map(list -> expenseFileMap) // Return the final map
+                );
     }
 
-    public List<ReportExcelDTO> extractDataForReport(String initiativeId) {
-        List<ReportExcelDTO> excelReportDTOList = new ArrayList<>();
+    public Mono<List<ReportExcelDTO>> extractDataForReport(String initiativeId) {
 
-        onboardingFamiliesRepository.findByInitiativeId(initiativeId)
+        return onboardingFamiliesRepository.findByInitiativeId(initiativeId)
                 .filter(family -> OnboardingFamilyEvaluationStatus.ONBOARDING_OK.equals(family.getStatus()))
                 .collectList()
                 .flatMapMany(Flux::fromIterable)
@@ -240,10 +239,8 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
                                         });
                             });
                 })
-                .doOnNext(excelReportDTOList::add)
-                .blockLast();
+                .collectList();
 
-        return excelReportDTOList;
     }
 
 
