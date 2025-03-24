@@ -132,17 +132,24 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
                 .flatMap(entry -> {
                     String originalFileName = entry.getKey();
                     String newFileName = entry.getValue();
-
                     return fileStorageConnector.downloadFile(originalFileName)
-                            .collectList()
-                            .flatMap(byteBuffers -> {
-                                // Unisci i ByteBuffer in un array di byte
-                                byte[] fileData = ByteBuffer.allocate(byteBuffers.stream().mapToInt(ByteBuffer::remaining).sum())
-                                        .put(byteBuffers.stream().reduce(ByteBuffer::put).orElse(ByteBuffer.allocate(0)))
-                                        .array();
-
-                                // Crea un ZipEntry per il file
-                                return Mono.just(Map.entry(new ZipEntry(newFileName), fileData));
+                            .flatMap(byteBuffer -> {
+                                List<Byte> byteList = new ArrayList<>();
+                                while (byteBuffer.hasRemaining()) {
+                                    byteList.add(byteBuffer.get());
+                                }
+                                return Mono.just(byteList);
+                            })
+                            .reduce(new ArrayList<Byte>(), (allBytes, byteList) -> {
+                                allBytes.addAll(byteList);
+                                return allBytes;
+                            })
+                            .flatMap(allBytes -> {
+                                byte[] byteArray = new byte[allBytes.size()];
+                                for (int i = 0; i < allBytes.size(); i++) {
+                                    byteArray[i] = allBytes.get(i);
+                                }
+                                return Mono.just(Map.entry(new ZipEntry(newFileName), byteArray));
                             });
                 })
                 .collectList()

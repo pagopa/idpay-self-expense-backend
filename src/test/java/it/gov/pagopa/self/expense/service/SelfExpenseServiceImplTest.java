@@ -353,7 +353,10 @@ class SelfExpenseServiceImplTest {
         mockRepositoryForReport();
 
 
-        Flux<ByteBuffer> expectedResult = Flux.just(ByteBuffer.wrap(new byte[0]));
+        Flux<ByteBuffer> expectedResult = Flux.just(
+                ByteBuffer.wrap(new byte[]{1, 2, 3}),
+                ByteBuffer.wrap(new byte[]{4, 5, 6})
+        );
 
         Mockito.doReturn(expectedResult)
                 .when(fileStorageAsyncConnector)
