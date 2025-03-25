@@ -12,7 +12,7 @@ public class ExcelPOIHelper {
 
 
     public byte[] genExcel(List<String> headerColumns, List<List<String>> rowValues) throws IOException {
-        try (Workbook workbook = new XSSFWorkbook();
+        try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 
             Sheet sheet = workbook.createSheet("Export");
@@ -24,12 +24,12 @@ public class ExcelPOIHelper {
             headerStyle.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
             headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-            XSSFFont font = ((XSSFWorkbook) workbook).createFont();
+            XSSFFont font = workbook.createFont();
             font.setFontHeightInPoints((short) 12);
             font.setBold(true);
             headerStyle.setFont(font);
 
-            Cell headerCell = null;
+            Cell headerCell;
             int i=0;
             for(String headername : headerColumns) {
                 headerCell = header.createCell(i);
@@ -44,7 +44,7 @@ public class ExcelPOIHelper {
             style.setWrapText(true);
 
             int r = 1;
-            Row row = null;
+            Row row;
             //loop on rows
             for(List<String> rowValueList : rowValues) {
                 row = sheet.createRow(r);
@@ -71,17 +71,6 @@ public class ExcelPOIHelper {
             workbook.write(outputStream);
 
             return outputStream.toByteArray();
-        }
-    }
-
-    public void writeExcel(List<String> headerColumns, List<List<String>> rowValues, String filePath) throws IOException {
-
-        byte[] binaryReport = genExcel(headerColumns, rowValues);
-
-        // Specifica il percorso del file
-
-        try (FileOutputStream fileOut = new FileOutputStream(filePath)) {
-            fileOut.write(binaryReport);
         }
     }
 
