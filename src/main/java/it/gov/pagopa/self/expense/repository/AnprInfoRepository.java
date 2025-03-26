@@ -9,5 +9,6 @@ public interface AnprInfoRepository extends ReactiveMongoRepository<AnprInfo, St
 
     Mono<AnprInfo> findByUserId(String userId);
 
+    Mono<AnprInfo> findByFamilyId(String familyId);
 
 }

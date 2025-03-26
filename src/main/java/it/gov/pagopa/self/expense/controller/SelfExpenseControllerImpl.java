@@ -11,9 +11,10 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 @RestController
-public class SelfExpenseControllerImpl implements SelfExpenseController{
+public class SelfExpenseControllerImpl implements SelfExpenseController {
 
     private final SelfExpenseService selfExpenseService;
+
     public SelfExpenseControllerImpl(SelfExpenseService selfExpenseService) {
         this.selfExpenseService = selfExpenseService;
     }
@@ -26,9 +27,21 @@ public class SelfExpenseControllerImpl implements SelfExpenseController{
 
     @Override
     public Mono<ResponseEntity<Void>> saveExpenseData(List<FilePart> files, ExpenseDataDTO expenseData) {
-        return selfExpenseService.saveExpenseData(files,expenseData)
+        return selfExpenseService.saveExpenseData(files, expenseData)
                 .then(Mono.just(ResponseEntity.ok().build()));
     }
 
+    @Override
+    public Mono<ResponseEntity<byte[]>> downloadReportExcel(String initiativeId) {
+
+        return selfExpenseService.generateReportExcel(initiativeId);
+    }
+
+    @Override
+    public Mono<ResponseEntity<byte[]>> downloadExpenseFile(String initiativeId) {
+
+        return selfExpenseService.downloadExpenseFile(initiativeId);
+    }
 
 }
+
