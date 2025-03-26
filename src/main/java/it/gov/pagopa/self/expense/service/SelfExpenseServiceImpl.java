@@ -6,24 +6,34 @@ import it.gov.pagopa.self.expense.connector.FileStorageAsyncConnector;
 import it.gov.pagopa.self.expense.constants.Constants;
 import it.gov.pagopa.self.expense.dto.ChildResponseDTO;
 import it.gov.pagopa.self.expense.dto.ExpenseDataDTO;
+import it.gov.pagopa.self.expense.dto.ReportExcelDTO;
+import it.gov.pagopa.self.expense.enums.OnboardingFamilyEvaluationStatus;
 import it.gov.pagopa.self.expense.event.producer.RtdProducer;
 import it.gov.pagopa.self.expense.model.ExpenseData;
+import it.gov.pagopa.self.expense.model.SelfDeclarationText;
 import it.gov.pagopa.self.expense.model.mapper.ExpenseDataMapper;
 import it.gov.pagopa.self.expense.repository.AnprInfoRepository;
 import it.gov.pagopa.self.expense.repository.ExpenseDataRepository;
+import it.gov.pagopa.self.expense.repository.OnboardingFamiliesRepository;
+import it.gov.pagopa.self.expense.repository.SelfDeclarationTextRepository;
+import it.gov.pagopa.self.expense.utils.Utils;
+import it.gov.pagopa.self.expense.utils.excel.ExcelPOIHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Slf4j
 @Service
@@ -36,7 +46,11 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
     private final UserFiscalCodeService userFiscalCodeService;
     private final RtdProducer rtdProducer;
     private final FileStorageAsyncConnector fileStorageConnector;
-    public SelfExpenseServiceImpl(AnprInfoRepository anprInfoRepository, ExceptionMap exceptionMap, ExpenseDataRepository expenseDataRepository, CacheService cacheService, UserFiscalCodeService userFiscalCodeService, RtdProducer rtdProducer, FileStorageAsyncConnector fileStorageConnector) {
+    private final OnboardingFamiliesRepository onboardingFamiliesRepository;
+    private final SelfDeclarationTextRepository selfDeclarationTextRepository;
+
+
+    public SelfExpenseServiceImpl(AnprInfoRepository anprInfoRepository, ExceptionMap exceptionMap, ExpenseDataRepository expenseDataRepository, CacheService cacheService, UserFiscalCodeService userFiscalCodeService, RtdProducer rtdProducer, FileStorageAsyncConnector fileStorageConnector, OnboardingFamiliesRepository onboardingFamiliesRepository,SelfDeclarationTextRepository selfDeclarationTextRepository) {
         this.anprInfoRepository = anprInfoRepository;
         this.expenseDataRepository = expenseDataRepository;
         this.exceptionMap = exceptionMap;
@@ -44,6 +58,8 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
         this.userFiscalCodeService = userFiscalCodeService;
         this.rtdProducer = rtdProducer;
         this.fileStorageConnector = fileStorageConnector;
+        this.onboardingFamiliesRepository = onboardingFamiliesRepository;
+        this.selfDeclarationTextRepository = selfDeclarationTextRepository;
     }
 
     @Override
@@ -82,6 +98,165 @@ public class SelfExpenseServiceImpl implements SelfExpenseService {
                 .flatMap(savedData  -> rtdProducer.scheduleMessage(expenseData))
                 .doOnSuccess(result -> log.info("Expense data saved successfully for user: {}", expenseData.getFiscalCode()))
                 .onErrorResume(e -> handleSaveError(expenseData.getFiscalCode(), fileList, e));
+    }
+
+    @Override
+    public Mono<ResponseEntity<byte[]>> generateReportExcel(String initiativeId)  {
+
+        return extractDataForReport(initiativeId)
+                .flatMap(dataForReport -> {
+                    if (!dataForReport.isEmpty()) {
+                        ExcelPOIHelper excelHelper = new ExcelPOIHelper();
+                        try {
+                            byte[] excelBytes = excelHelper.genExcel(ReportExcelDTO.headerName, Utils.generateRowValuesForReport(dataForReport));
+                            return Mono.just(ResponseEntity.ok()
+                                    .header("Content-Disposition", "attachment; filename=ReportCentriEstivi.xlsx")
+                                    .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
+                                    .body(excelBytes));
+                        } catch (IOException e) {
+                            log.error("Exception in generateReportExcel", e);
+                            return Mono.just(ResponseEntity.internalServerError().build());
+                        }
+                    } else {
+                        return Mono.just(ResponseEntity.notFound().build());
+                    }
+                });
+    }
+
+    @Override
+    public Mono<ResponseEntity<byte[]>> downloadExpenseFile(String initiativeId) {
+
+        Mono<Map<String, String>> fileNameMap = extractFileNameList(initiativeId);
+        return fileNameMap
+                .flatMapIterable(Map::entrySet)
+                .flatMap(entry -> {
+                    String originalFileName = entry.getKey();
+                    String newFileName = entry.getValue();
+                    return fileStorageConnector.downloadFile(originalFileName)
+                            .flatMap(byteBuffer -> {
+                                List<Byte> byteList = new ArrayList<>();
+                                while (byteBuffer.hasRemaining()) {
+                                    byteList.add(byteBuffer.get());
+                                }
+                                return Mono.just(byteList);
+                            })
+                            .reduce(new ArrayList<Byte>(), (allBytes, byteList) -> {
+                                allBytes.addAll(byteList);
+                                return allBytes;
+                            })
+                            .flatMap(allBytes -> {
+                                byte[] byteArray = new byte[allBytes.size()];
+                                for (int i = 0; i < allBytes.size(); i++) {
+                                    byteArray[i] = allBytes.get(i);
+                                }
+                                return Mono.just(Map.entry(new ZipEntry(newFileName), byteArray));
+                            });
+                })
+                .collectList()
+                .flatMap(zipEntriesAndData -> {
+                    try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                         ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)) {
+
+                        for (var entry : zipEntriesAndData) {
+                            ZipEntry zipEntry = entry.getKey();
+                            byte[] data = entry.getValue();
+
+                            zipOutputStream.putNextEntry(zipEntry);
+                            zipOutputStream.write(data);
+                            zipOutputStream.closeEntry();
+                        }
+
+                        zipOutputStream.finish();
+                        byte[] zipBytes = byteArrayOutputStream.toByteArray();
+
+                        return Mono.just(ResponseEntity.ok()
+                                .header("Content-Disposition", "attachment; filename=expenseFiles.zip")
+                                .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
+                                .body(zipBytes));
+                    } catch (IOException e) {
+                        return Mono.error(new RuntimeException("Error creating ZIP file", e));
+                    }
+                });
+
+    }
+
+
+
+    public Mono<Map<String, String>> extractFileNameList(String initiativeId) {
+        // Fetch all expense data for the initiative
+
+
+        Map<String, String> expenseFileMap = new HashMap<>(); // <[storedFilePath], [fileName With Other info]>
+
+
+        return extractDataForReport(initiativeId)
+                .flatMap(reportExcelDTOList ->
+                     Flux.fromIterable(reportExcelDTOList)
+                            .flatMap(reportExcelDTO -> {
+                                List<ExpenseData> expenseDataList = reportExcelDTO.getExpenseDataList();
+                                return  Flux.fromIterable(expenseDataList)
+                                                .flatMap(expenseData ->
+                                                        userFiscalCodeService.getUserFiscalCode(expenseData.getUserId())
+                                                            .map(cf -> {
+                                                                for (String filename : expenseData.getFilesName()) {
+                                                                    String storedPath = String.format("%s/%s", expenseData.getUserId(), filename);
+                                                                    String downloadName = String.format("%s_%s_%s_%s", cf, expenseData.getName(),
+                                                                            expenseData.getSurname(), filename);
+                                                                    expenseFileMap.put(storedPath, downloadName);
+                                                                }
+                                                                return expenseFileMap;
+                                                            })
+                                                );
+                            })
+                            .collectList()
+                            .map(list -> expenseFileMap) // Return the final map
+                );
+    }
+
+    public Mono<List<ReportExcelDTO>> extractDataForReport(String initiativeId) {
+
+        return onboardingFamiliesRepository.findByInitiativeId(initiativeId)
+                .filter(family -> OnboardingFamilyEvaluationStatus.ONBOARDING_OK.equals(family.getStatus()))
+                .collectList()
+                .flatMapMany(Flux::fromIterable)
+                .flatMap(family -> {
+                    ReportExcelDTO excelReportDTO = new ReportExcelDTO();
+
+
+                    return anprInfoRepository.findByFamilyId(family.getFamilyId())
+                            .flatMap(anprInfo -> getUserFiscalCodeFromListId(family.getMemberIds())
+                                    .flatMap(cfListString -> {
+                                        excelReportDTO.set_2_CF_compNucleo(cfListString);
+                                        return userFiscalCodeService.getUserFiscalCode(anprInfo.getUserId())
+                                                .doOnNext(excelReportDTO::set_0_cfGenTutore)
+                                                .then(Mono.just(anprInfo));
+                                    }))
+                            .flatMap(anprInfo -> {
+                                excelReportDTO.set_4_N_figliMinori(String.valueOf(anprInfo.getChildList().size()));
+                                excelReportDTO.set_3_N_minoriNucleo(String.valueOf(anprInfo.getUnderAgeNumber()));
+
+                                return selfDeclarationTextRepository.findById(SelfDeclarationText.buildId(family.getInitiativeId(), anprInfo.getUserId()))
+                                        .flatMap(selfDeclaration -> {
+                                            excelReportDTO.set_1_dichiarazioni(selfDeclaration != null ? Utils.formatDeclaration(selfDeclaration.getSelfDeclarationTextValues()) : "");
+                                            return expenseDataRepository.findByUserId(anprInfo.getUserId()).collectList();
+                                        })
+                                        .map(expenseDataList -> {
+                                            excelReportDTO.setExpenseDataList(expenseDataList);
+                                            return excelReportDTO;
+                                        });
+                            });
+                })
+                .collectList();
+
+    }
+
+
+
+    private Mono<String> getUserFiscalCodeFromListId(Set<String> ids) {
+        return Flux.fromIterable(ids)
+                .flatMap(userFiscalCodeService::getUserFiscalCode)
+                .collectList()
+                .map(fiscalCodes -> String.join("\n", fiscalCodes));
     }
 
     private Mono<List<FilePart>> validateFiles(List<FilePart> fileList) {

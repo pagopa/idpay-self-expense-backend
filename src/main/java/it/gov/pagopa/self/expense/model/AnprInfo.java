@@ -13,4 +13,5 @@ public class AnprInfo {
     private String initiativeId;
     private String userId;
     private List<Child> childList;
+    private Integer underAgeNumber;
 }

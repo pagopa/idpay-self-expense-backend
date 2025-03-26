@@ -13,6 +13,8 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
@@ -98,6 +100,54 @@ class SelfExpenseControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 ;
+    }
+
+    @Test
+    void shouldReturnExcelReport_WhenValidInitiativeId() {
+        // Given
+        String initiativeId = "initiativeId";
+        byte[] expectedExcelBytes = new byte[]{1, 2, 3}; // Simulazione di un file Excel
+
+        Mockito.when(selfExpenseService.generateReportExcel(initiativeId))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                        .body(expectedExcelBytes)));
+
+        // When & Then
+        webClient.get()
+                .uri("/idpay/self-expense/download-report-excel/{initiativeId}", initiativeId)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .expectBody(byte[].class)
+                .consumeWith(response -> {
+                    byte[] actualExcelBytes = response.getResponseBody();
+                    Assertions.assertArrayEquals(expectedExcelBytes, actualExcelBytes);
+                });
+    }
+
+    @Test
+    void shouldReturnZipFile_WhenValidInitiativeId() {
+        // Given
+        String initiativeId = "initiativeId";
+        byte[] expectedZipBytes = new byte[]{4, 5, 6}; // Simulazione di un file ZIP
+
+        Mockito.when(selfExpenseService.downloadExpenseFile(initiativeId))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                        .body(expectedZipBytes)));
+
+        // When & Then
+        webClient.get()
+                .uri("/idpay/self-expense/download-expense-file/{initiativeId}", initiativeId)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .expectBody(byte[].class)
+                .consumeWith(response -> {
+                    byte[] actualZipBytes = response.getResponseBody();
+                    Assertions.assertArrayEquals(expectedZipBytes, actualZipBytes);
+                });
     }
 
 }

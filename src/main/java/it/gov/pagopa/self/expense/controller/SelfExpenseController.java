@@ -20,5 +20,10 @@ public interface SelfExpenseController {
             @RequestPart("files") List<FilePart> files,
             @RequestPart("expenseData") ExpenseDataDTO expenseData);
 
+    @GetMapping("/download-report-excel/{initiativeId}")
+    Mono<ResponseEntity<byte[]>> downloadReportExcel(@PathVariable String initiativeId) ;
 
+
+    @GetMapping("/download-expense-file/{initiativeId}")
+    Mono<ResponseEntity<byte[]>> downloadExpenseFile(@PathVariable String initiativeId);
 }
