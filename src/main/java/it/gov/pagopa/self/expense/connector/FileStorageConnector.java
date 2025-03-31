@@ -6,7 +6,6 @@ import java.io.InputStream;
 public interface FileStorageConnector {
     void uploadFile(InputStream inputStream, String fileName, String contentType);
     ByteArrayOutputStream downloadFile(String fileName);
-
     void delete(String content);
 
 }

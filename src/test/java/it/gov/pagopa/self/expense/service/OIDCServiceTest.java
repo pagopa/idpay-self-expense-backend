@@ -1,6 +1,5 @@
 package it.gov.pagopa.self.expense.service;
 
-import it.gov.pagopa.self.expense.model.OIDCProviderToken;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -10,6 +9,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import it.gov.pagopa.self.expense.model.OIDCProviderToken;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
@@ -51,64 +51,61 @@ class OIDCServiceTest {
     @Autowired
     private OIDCServiceImpl oidcService;
 
-//    @Test
-//    void testValidateTokens_BothValid() throws Exception {
-//        JWKSet jwkSet = generateJWKSet();
-//        MockedStatic<JWKSet> jwkSetMockedStatic = mockStatic(JWKSet.class);
-//        jwkSetMockedStatic.when(() -> JWKSet.load(any(URL.class))).thenReturn(jwkSet);
-//
-//        String idToken = generateIdToken(ISSUER, CLIENT_ID,VALIDITY_SECONDS, jwkSet);
-//        String accessToken = generateAccessToken(jwkSet);
-//
-//        OIDCProviderToken token = new OIDCProviderToken();
-//        token.setIdToken(idToken);
-//        token.setAccessToken(accessToken);
-//
-//        assertTrue(oidcService.validateTokens(token));
-//
-//        jwkSetMockedStatic.close();
-//    }
-//
-//    @Test
-//    void testValidateTokens_IdTokenInvalidClientId() throws Exception {
-//        JWKSet jwkSet = generateJWKSet();
-//        MockedStatic<JWKSet> jwkSetMockedStatic = mockStatic(JWKSet.class);
-//        jwkSetMockedStatic.when(() -> JWKSet.load(any(URL.class))).thenReturn(jwkSet);
-//
-//        String idToken = generateIdToken(ISSUER, WRONG_CLIENT_ID, VALIDITY_SECONDS, jwkSet);
-//        String accessToken = generateAccessToken(jwkSet);
-//
-//        OIDCProviderToken token = new OIDCProviderToken();
-//        token.setIdToken(idToken);
-//        token.setAccessToken(accessToken);
-//
-//        assertFalse(oidcService.validateTokens(token));
-//
-//        jwkSetMockedStatic.close();
-//    }
-//
-//
-//    @Test
-//    void testValidateTokens_IdTokenSignatureNotValid() throws Exception {
-//        JWKSet jwkSet = generateJWKSet();
-//        MockedStatic<JWKSet> jwkSetMockedStatic = mockStatic(JWKSet.class);
-//        jwkSetMockedStatic.when(() -> JWKSet.load(any(URL.class))).thenReturn(jwkSet);
-//
-//        JWKSet jwkSetUsed = generateJWKSet();
-//
-//        String idToken = generateIdToken(WRONG_ISSUER, CLIENT_ID, VALIDITY_SECONDS, jwkSetUsed);
-//        String accessToken = generateAccessToken(jwkSetUsed);
-//
-//        OIDCProviderToken token = new OIDCProviderToken();
-//        token.setIdToken(idToken);
-//        token.setAccessToken(accessToken);
-//
-//        assertFalse(oidcService.validateTokens(token));
-//
-//        jwkSetMockedStatic.close();
-//    }
-//
-//
+    @Test
+    void testValidateTokens_BothValid() throws Exception {
+        JWKSet jwkSet = generateJWKSet();
+        MockedStatic<JWKSet> jwkSetMockedStatic = mockStatic(JWKSet.class);
+        jwkSetMockedStatic.when(() -> JWKSet.load(any(URL.class))).thenReturn(jwkSet);
+
+        String idToken = generateIdToken(ISSUER, CLIENT_ID,VALIDITY_SECONDS, jwkSet);
+
+        OIDCProviderToken token = new OIDCProviderToken();
+        token.setIdToken(idToken);
+        token.setAccessToken("exampleToken");
+
+        assertTrue(oidcService.validateTokens(token));
+
+        jwkSetMockedStatic.close();
+    }
+
+    @Test
+    void testValidateTokens_IdTokenInvalidClientId() throws Exception {
+        JWKSet jwkSet = generateJWKSet();
+        MockedStatic<JWKSet> jwkSetMockedStatic = mockStatic(JWKSet.class);
+        jwkSetMockedStatic.when(() -> JWKSet.load(any(URL.class))).thenReturn(jwkSet);
+
+        String idToken = generateIdToken(ISSUER, WRONG_CLIENT_ID, VALIDITY_SECONDS, jwkSet);
+
+        OIDCProviderToken token = new OIDCProviderToken();
+        token.setIdToken(idToken);
+        token.setAccessToken("exampleToken");
+
+        assertFalse(oidcService.validateTokens(token));
+
+        jwkSetMockedStatic.close();
+    }
+
+
+    @Test
+    void testValidateTokens_IdTokenSignatureNotValid() throws Exception {
+        JWKSet jwkSet = generateJWKSet();
+        MockedStatic<JWKSet> jwkSetMockedStatic = mockStatic(JWKSet.class);
+        jwkSetMockedStatic.when(() -> JWKSet.load(any(URL.class))).thenReturn(jwkSet);
+
+        JWKSet jwkSetUsed = generateJWKSet();
+
+        String idToken = generateIdToken(WRONG_ISSUER, CLIENT_ID, VALIDITY_SECONDS, jwkSetUsed);
+
+        OIDCProviderToken token = new OIDCProviderToken();
+        token.setIdToken(idToken);
+        token.setAccessToken("exampleToken");
+
+        assertFalse(oidcService.validateTokens(token));
+
+        jwkSetMockedStatic.close();
+    }
+
+
     @Test
     void testValidateTokens_IdTokenInvalidIssuer() throws Exception {
         JWKSet jwkSet = generateJWKSet();
@@ -124,47 +121,47 @@ class OIDCServiceTest {
 
         jwkSetMockedStatic.close();
     }
-//
-//    @Test
-//    void testValidateTokens_TokenExpired() throws Exception {
-//        JWKSet jwkSet = generateJWKSet();
-//        MockedStatic<JWKSet> jwkSetMockedStatic = mockStatic(JWKSet.class);
-//        jwkSetMockedStatic.when(() -> JWKSet.load(any(URL.class))).thenReturn(jwkSet);
-//
-//        String idToken = generateIdToken(ISSUER, CLIENT_ID,EXPIRED_VALIDITY_SECONDS, jwkSet); // Expired token
-//        String accessToken = generateAccessToken(jwkSet);
-//
-//        OIDCProviderToken token = new OIDCProviderToken();
-//        token.setIdToken(idToken);
-//        token.setAccessToken(accessToken);
-//
-//        assertFalse(oidcService.validateTokens(token));
-//
-//        jwkSetMockedStatic.close();
-//    }
-//
-//    @Test
-//    void testValidateTokens_ExceptionThrown() {
-//        OIDCProviderToken token = new OIDCProviderToken();
-//        token.setAccessToken("valid-access-token");
-//        assertFalse(oidcService.validateTokens(token));
-//    }
-//
-//    @Test
-//    void testExtractFiscalCodeFromIdToken() throws JOSEException, NoSuchAlgorithmException {
-//        JWKSet jwkSet = generateJWKSet();
-//        MockedStatic<JWKSet> jwkSetMockedStatic = mockStatic(JWKSet.class);
-//        jwkSetMockedStatic.when(() -> JWKSet.load(any(URL.class))).thenReturn(jwkSet);
-//
-//        String idToken = generateIdToken(ISSUER, CLIENT_ID,VALIDITY_SECONDS, jwkSet);
-//
-//        String fiscalCode = oidcService.extractFiscalCodeFromIdToken(idToken);
-//        assertEquals(FISCAL_CODE, fiscalCode);
-//
-//        jwkSetMockedStatic.close();
-//    }
-//
-//
+
+    @Test
+    void testValidateTokens_TokenExpired() throws Exception {
+        JWKSet jwkSet = generateJWKSet();
+        MockedStatic<JWKSet> jwkSetMockedStatic = mockStatic(JWKSet.class);
+        jwkSetMockedStatic.when(() -> JWKSet.load(any(URL.class))).thenReturn(jwkSet);
+
+        String idToken = generateIdToken(ISSUER, CLIENT_ID,EXPIRED_VALIDITY_SECONDS, jwkSet); // Expired token
+
+        OIDCProviderToken token = new OIDCProviderToken();
+        token.setIdToken(idToken);
+        token.setAccessToken("exampleToken");
+
+
+        assertFalse(oidcService.validateTokens(token));
+
+        jwkSetMockedStatic.close();
+    }
+
+    @Test
+    void testValidateTokens_ExceptionThrown() {
+        OIDCProviderToken token = new OIDCProviderToken();
+        token.setAccessToken("valid-access-token");
+        assertFalse(oidcService.validateTokens(token));
+    }
+
+    @Test
+    void testExtractFiscalCodeFromIdToken() throws JOSEException, NoSuchAlgorithmException {
+        JWKSet jwkSet = generateJWKSet();
+        MockedStatic<JWKSet> jwkSetMockedStatic = mockStatic(JWKSet.class);
+        jwkSetMockedStatic.when(() -> JWKSet.load(any(URL.class))).thenReturn(jwkSet);
+
+        String idToken = generateIdToken(ISSUER, CLIENT_ID,VALIDITY_SECONDS, jwkSet);
+
+        String fiscalCode = oidcService.extractFiscalCodeFromIdToken(idToken);
+        assertEquals(FISCAL_CODE, fiscalCode);
+
+        jwkSetMockedStatic.close();
+    }
+
+
 
     private static String generateIdToken(String issuer,String clientId, int validitySeconds, JWKSet jwkSet) throws JOSEException {
         RSAPrivateKey privateKey = jwkSet.getKeys().get(0).toRSAKey().toRSAPrivateKey();
@@ -172,8 +169,9 @@ class OIDCServiceTest {
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .issuer(issuer)
                 .audience(clientId)
-                .subject("1234567890")
+                .subject("A123456789")
                 .claim("fiscal_code", FISCAL_CODE)
+                .claim("at_hash", "KJKI_eMr0MfpMUOhFzyLDQ")
                 .issueTime(new Date())
                 .expirationTime(new Date(System.currentTimeMillis() + validitySeconds * 1000L))
                 .build();
@@ -190,7 +188,6 @@ class OIDCServiceTest {
     }
 
 
-
     private JWKSet generateJWKSet() throws NoSuchAlgorithmException {
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
         keyPairGenerator.initialize(2048);
@@ -205,4 +202,6 @@ class OIDCServiceTest {
 
         return new JWKSet(rsaJWK);
     }
+
+
 }
