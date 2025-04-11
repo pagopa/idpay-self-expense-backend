@@ -42,6 +42,5 @@ public class SelfExpenseControllerImpl implements SelfExpenseController {
 
         return selfExpenseService.downloadExpenseFile(initiativeId);
     }
-
 }
 
