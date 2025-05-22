@@ -77,9 +77,9 @@ jobs:
           azure_devops_pat: ${{ secrets.AZURE_DEVOPS_TOKEN }}
           azure_template_parameters: |
             {
-              "APPS_TOP": "[idpay-self-expense-backend]",
+              "APPS_TOP": "[]",
               "APPS_MID": "[]",
-              "APPS_EXT": "[]",
+              "APPS_EXT": "[idpay-self-expense-backend]",
               "ARGOCD_TARGET_BRANCH": "${{ github.event.inputs.argocd_target_branch }}",
               "POSTMAN_BRANCH": "${{ github.event.inputs.postman_branch }}",
               "TRIGGER_MESSAGE": "idpay-self-expense-backend"
