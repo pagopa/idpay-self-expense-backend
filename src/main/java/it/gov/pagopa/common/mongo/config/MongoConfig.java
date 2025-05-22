@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 public class MongoConfig {
 
+    
     @Configuration
     @ConfigurationProperties(prefix = "spring.data.mongodb.config")
     public static class MongoDbCustomProperties {
