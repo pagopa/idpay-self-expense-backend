@@ -7,10 +7,10 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 
-@RequestMapping("/idpay/email")
+@RequestMapping("/idpay/self-expense")
 public interface EmailController {
 
-    @GetMapping("/send")
+    @PostMapping("/send")
     Mono<ResponseEntity<String>> send(@RequestBody MessageDTO dto);
 
 
