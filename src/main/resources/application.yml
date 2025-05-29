@@ -238,3 +238,6 @@ blobStorage:
   file:
     containerReference: ${BLOB_STORAGE_CONTAINER_REFERENCE:}
 
+azure:
+  communication:
+    connection-string: ${EMAIL_CONNECTION_URL:}
