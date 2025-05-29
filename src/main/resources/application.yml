@@ -137,6 +137,10 @@ spring:
   redis:
     enabled: ${REDIS_CACHE_ENABLED:false}
 
+azure:
+  communication:
+     connection-string: ${EMAIL_CONNECTION_URL:http://@localhost:3000}
+
 management:
   health:
     redis.enabled: false
