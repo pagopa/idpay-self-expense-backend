@@ -2,7 +2,6 @@ package it.gov.pagopa.self.expense.controller;
 
 import it.gov.pagopa.self.expense.dto.MessageDTO;
 import it.gov.pagopa.self.expense.service.aws_ses.AwsSesService;
-import lombok.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,7 +23,7 @@ public class EmailControllerImpl implements  EmailController{
 
     @Override
     public Mono<ResponseEntity<String>> send(@RequestBody MessageDTO dto) {
-      return awsSesService.sendEmail("stefano.delia@pagopa.it","test","Ciao Mondo");
+      return awsSesService.sendEmail(dto.getEmailAddress(),dto.getSubject(),dto.getPlainText());
     }
 
 }
