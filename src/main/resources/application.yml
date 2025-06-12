@@ -232,10 +232,10 @@ app:
       baseUrl: ${MIL_AUTH_BASE_URL:https://api-mcshared.dev.cstar.pagopa.it/auth/token}
       clientId: ${MIL_AUTH_CLIENT_ID:clientId}
       clientSecret: ${MIL_AUTH_CLIENT_SECRET:clientSecret}
-    aws:
-      region: ${AWS_REGION:eu-south-1}
-      ses:
-        user: ${AWS_SES_USER:user}
+  aws:
+    region: ${AWS_REGION:eu-south-1}
+    ses:
+      user: ${AWS_SES_USER:user}
 
 blobStorage:
   connectionString: ${BLOB_STORAGE_CONNECTION_STRING:}
