@@ -3,6 +3,7 @@ package it.gov.pagopa.self.expense.service.aws_ses;
 import it.gov.pagopa.self.expense.controller.aws_ses.AwsSesConnector;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -18,7 +19,7 @@ public class AwsSesServiceImpl implements AwsSesService {
     }
 
     @Override
-    public Mono<String> sendEmail(String to, String subject, String body) {
+    public Mono<ResponseEntity<String>> sendEmail(String to, String subject, String body) {
         log.trace("sendEmail start");
         log.debug("sendEmail , to = {}, subject = {}, body = {}", to, subject, body);
         String result = null;
@@ -30,6 +31,6 @@ public class AwsSesServiceImpl implements AwsSesService {
         }
         log.debug("sendEmail result = {}", result);
         log.trace("sendEmail end");
-        return Mono.just(result);
+        return Mono.just(ResponseEntity.ok(result));
     }
 }
