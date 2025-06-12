@@ -1,0 +1,12 @@
+package it.gov.pagopa.self.expense.dto;
+
+import lombok.Data;
+
+@Data
+public class MessageDTO
+{
+    private String emailAddress;
+    private String subject;
+    private String plainText;
+    private String html;
+}

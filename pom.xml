@@ -257,6 +257,20 @@
 			<artifactId>azure-storage-blob</artifactId>
 		</dependency>
 
+
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>sdk-core</artifactId>
+			<version>2.17.24</version>
+		</dependency>
+
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>ses</artifactId>
+			<version>2.17.24</version>
+		</dependency>
+
+
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>
@@ -339,6 +353,7 @@
 				<artifactId>xstream</artifactId>
 				<version>1.4.21</version>
 			</dependency>
+
 		</dependencies>
 	</dependencyManagement>
 	<build>
@@ -347,8 +362,8 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
-					<source>17</source>
-					<target>17</target>
+					<source>21</source>
+					<target>21</target>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -356,7 +371,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.2.3</version>
 				<configuration>
-					<argLine>@{argLine} --add-opens java.base/java.lang=ALL-UNNAMED</argLine>
+					<argLine>--add-opens java.base/java.lang=ALL-UNNAMED</argLine>
 				</configuration>
 			</plugin>
 			<plugin>
