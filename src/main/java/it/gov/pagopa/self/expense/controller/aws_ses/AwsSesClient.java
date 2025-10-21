@@ -1,0 +1,33 @@
+package it.gov.pagopa.self.expense.controller.aws_ses;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.ses.SesClient;
+import software.amazon.awssdk.services.ses.model.*;
+
+@Slf4j
+@Service
+public class AwsSesClient implements AwsSesConnector {
+
+    @Autowired
+    private SesClient sesClient;
+
+    @Value("${app.aws.ses.user}")
+    private String from;
+
+    public String sendEmail(String to, String subject, String body) {
+
+        SendEmailRequest request = SendEmailRequest.builder()
+                .source(from)
+                .destination(Destination.builder().toAddresses(to).build())
+                .message(Message.builder()
+                        .subject(Content.builder().data(subject).build())
+                        .body(Body.builder().text(Content.builder().data(body).build()).build())
+                        .build())
+                .build();
+        SendEmailResponse response = sesClient.sendEmail(request);
+        return "Email sent! Message ID: " + response.messageId();
+    }
+}
